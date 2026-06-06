@@ -983,6 +983,16 @@ const ACHIEVEMENTS=[
   {id:'all_maps',     name:'Wereld-Reiziger',   desc:'Alle winkel-velden verzameld',       icon:'🗺️', target:8,   stat:'shopMapsOwned',reward:100},
   {id:'crates_10',    name:'Kisten Opener',     desc:'10 kisten geopend',                  icon:'📦', target:10,  stat:'cratesOpened', reward:30},
   {id:'legendary_get',name:'Mythisch!',         desc:'Een legendarisch item gevonden',     icon:'🌠', target:1,   stat:'legendaryFound',reward:75},
+  {id:'powerup_first',name:'Opgeladen!',        desc:'Activeer je eerste power-up',        icon:'⚡', target:1,   stat:'powerupsActivated', reward:15},
+  {id:'powerup_10',   name:'Power Junkie',      desc:'Activeer 10 power-ups',              icon:'💊', target:10,  stat:'powerupsActivated', reward:40},
+  {id:'bomb_survive', name:'Bommenexpert',      desc:'Vermijd 10 bom ballen',              icon:'💣', target:10,  stat:'bombsAvoided',      reward:30},
+  {id:'golden_hit',   name:'Goudkoorts',        desc:'Sla 5 gouden ballen weg',            icon:'⭐', target:5,   stat:'goldenBallsHit',    reward:50},
+  {id:'streak_3',     name:'Op Stoom',          desc:'3 dagen op rij ingelogd',            icon:'🔥', target:3,   stat:'loginStreak',       reward:25},
+  {id:'streak_7',     name:'Weekkampioen',      desc:'7 dagen op rij ingelogd',            icon:'🌟', target:7,   stat:'loginStreak',       reward:75},
+  {id:'prestige_1',   name:'Herboren',          desc:'Doe je eerste prestige',             icon:'🌟', target:1,   stat:'prestige',          reward:200},
+  {id:'daily_5',      name:'Dagelijkse Held',   desc:'Voltooi 5 dagelijkse uitdagingen',   icon:'📅', target:5,   stat:'dailyChallengesCompleted', reward:60},
+  {id:'multiball',    name:'Circusact',         desc:'Sla 2 ballen tegelijk weg',          icon:'🎪', target:1,   stat:'multiballHit',      reward:35},
+  {id:'top_score',    name:'Recordbreker',      desc:'Zet een nieuwe highscore',           icon:'📈', target:1,   stat:'newHighscoreSet',   reward:20},
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1003,11 +1013,16 @@ function defaultState(){
     activeBat:'classic',activeMap:'classic',
     ownedBallSkins:['classic'],activeBallSkin:'classic',
     achievements:{},
-    stats:{totalHits:0,gamesPlayed:0,totalCoins:0,bestScore:0,cratesOpened:0,legendaryFound:0,bestCombo:0},
+    stats:{totalHits:0,gamesPlayed:0,totalCoins:0,bestScore:0,cratesOpened:0,legendaryFound:0,bestCombo:0,
+      powerupsActivated:0,bombsAvoided:0,goldenBallsHit:0,dailyChallengesCompleted:0,multiballHit:0,newHighscoreSet:0},
     bpClaimedLvls:[],
     inventory:[],  // loot items in inventory
     sfxVol:0.5,musicVol:0.25,muted:false,
     dailyChallenges:[],dailyDate:'',dailyProgress:{},
+    prestige:0,prestigeMultiplier:1,
+    loginStreak:0,lastLoginDate:'',streakCoinsCollected:false,
+    topScores:[],
+    featuredItem:null,featuredDate:'',
   };
 }
 let S=loadState()||defaultState();
@@ -1020,6 +1035,20 @@ if(!S.stats.bestCombo)S.stats.bestCombo=0;
 if(!S.dailyChallenges)S.dailyChallenges=[];
 if(!S.dailyDate)S.dailyDate='';
 if(!S.dailyProgress)S.dailyProgress={};
+if(S.stats.powerupsActivated==null)S.stats.powerupsActivated=0;
+if(S.stats.bombsAvoided==null)S.stats.bombsAvoided=0;
+if(S.stats.goldenBallsHit==null)S.stats.goldenBallsHit=0;
+if(S.stats.dailyChallengesCompleted==null)S.stats.dailyChallengesCompleted=0;
+if(S.stats.multiballHit==null)S.stats.multiballHit=0;
+if(S.stats.newHighscoreSet==null)S.stats.newHighscoreSet=0;
+if(S.prestige==null)S.prestige=0;
+if(S.prestigeMultiplier==null)S.prestigeMultiplier=1;
+if(S.loginStreak==null)S.loginStreak=0;
+if(S.lastLoginDate==null)S.lastLoginDate='';
+if(S.streakCoinsCollected==null)S.streakCoinsCollected=false;
+if(!S.topScores)S.topScores=[];
+if(S.featuredItem==null)S.featuredItem=null;
+if(S.featuredDate==null)S.featuredDate='';
 function saveState(){localStorage.setItem('ppb_v3',JSON.stringify(S));}
 
 // helpers
@@ -1076,7 +1105,11 @@ function checkAchievement(statKey,value){
       const statMap={totalHits:S.stats.totalHits,gamesPlayed:S.stats.gamesPlayed,
         totalCoins:S.stats.totalCoins,bestScore:S.stats.bestScore,level:S.level,
         cratesOpened:S.stats.cratesOpened,legendaryFound:S.stats.legendaryFound,
-        shopBatsOwned:shopBatsOwned(),shopMapsOwned:shopMapsOwned()};
+        shopBatsOwned:shopBatsOwned(),shopMapsOwned:shopMapsOwned(),
+        powerupsActivated:S.stats.powerupsActivated,bombsAvoided:S.stats.bombsAvoided,
+        goldenBallsHit:S.stats.goldenBallsHit,dailyChallengesCompleted:S.stats.dailyChallengesCompleted,
+        multiballHit:S.stats.multiballHit,newHighscoreSet:S.stats.newHighscoreSet,
+        loginStreak:S.loginStreak,prestige:S.prestige};
       cur=statMap[a.stat]||0;
     }
     if(cur>=a.target){
@@ -1091,7 +1124,8 @@ function checkAchievement(statKey,value){
 }
 
 function checkAllAchievements(){
-  ['totalHits','gamesPlayed','totalCoins','bestScore','level','cratesOpened','legendaryFound','shopBatsOwned','shopMapsOwned']
+  ['totalHits','gamesPlayed','totalCoins','bestScore','level','cratesOpened','legendaryFound','shopBatsOwned','shopMapsOwned',
+   'powerupsActivated','bombsAvoided','goldenBallsHit','dailyChallengesCompleted','multiballHit','newHighscoreSet','loginStreak','prestige']
     .forEach(k=>checkAchievement(k,0));
 }
 
@@ -1321,12 +1355,16 @@ canvas.addEventListener('touchmove',e=>{
   racket.x=(e.touches[0].clientX-r.left)*sx;racket.y=(e.touches[0].clientY-r.top)*sy;
 },{passive:false});
 
+// Keyboard state tracking
+const keys={};
 document.addEventListener('keydown',e=>{
+  keys[e.key]=true;
   if(e.key==='Escape'){
     if(gameState==='playing')pauseGame();
     else if(gameState==='paused')resumeGame();
   }
 });
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
 
 function pauseGame(){
   gameState='paused';
@@ -1370,9 +1408,13 @@ function spawnBall(){
   if(r<0.05){bomb=true;}
   else if(r<0.08){golden=true;}
   else if(r<0.20){powerup=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];}
-  balls.push({x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:13,rot:0,dir:pickDir(),
+  const b={x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:13,rot:0,dir:pickDir(),
     departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[],
-    bomb,golden,powerup});
+    bomb,golden,powerup};
+  const sizeRoll=Math.random();
+  if(sizeRoll<0.15){b.r=8;b.vx*=1.3;b.vy*=1.3;b.small=true;}
+  else if(sizeRoll<0.25){b.r=18;b.vx*=0.75;b.vy*=0.75;b.big=true;}
+  balls.push(b);
 }
 
 function outSide(b){
@@ -1522,6 +1564,8 @@ function activatePowerup(type){
   else if(type==='magnet'){magnetActive=true;}
   else if(type==='doubler'){doublerActive=true;}
   powerupsUsed++;
+  S.stats.powerupsActivated++;
+  checkAchievement('powerupsActivated',S.stats.powerupsActivated);
   const names={slowmo:'⏱️ Slow-mo!',shield:'🛡️ Schild!',magnet:'🧲 Magneet!',doubler:'💰 Verdubbeling!'};
   showToast(names[type]||'Power-up!');
   playPowerup();
@@ -1539,10 +1583,15 @@ function registerPoint(x,y,b){
   if(combo>=20)comboMult=4;else if(combo>=10)comboMult=3;else if(combo>=5)comboMult=2;else comboMult=1;
   if(comboMult>prevMult){playComboMilestone();addPopup(x,y-44,'+COMBO x'+comboMult+'!','#ff9500');showToast('🔥 Combo x'+comboMult+'!');}
 
+  // Multi-ball tracking
+  const activeBallCountNow=balls.filter(bl=>!bl.departing&&!bl.remove).length;
+  if(activeBallCountNow>=2){S.stats.multiballHit++;checkAchievement('multiballHit',S.stats.multiballHit);}
+
   // Golden ball special award
   if(b&&b.golden){
     goldenHit++;
-    const goldenCoins=5*comboMult;
+    S.stats.goldenBallsHit++;checkAchievement('goldenBallsHit',S.stats.goldenBallsHit);
+    const goldenCoins=Math.round(5*comboMult*S.prestigeMultiplier);
     S.coins+=goldenCoins;S.stats.totalCoins+=goldenCoins;gameCoins+=goldenCoins;coinUiEl.textContent=S.coins;playCoin();
     addPopup(x,y-28,'+5⭐ GOUD!','#ffd700');
     shake=8+Math.min(score*.35,12);goodFlash=Math.min(.04+score*.008,.28);
@@ -1560,12 +1609,13 @@ function registerPoint(x,y,b){
   }
 
   const coinMult=doublerActive?comboMult*2:comboMult;
-  const ec=score%3===0?coinMult:0;
+  const ecBase=score%3===0?coinMult:0;
+  const ec=ecBase?Math.round(ecBase*S.prestigeMultiplier):0;
   if(ec){S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;coinUiEl.textContent=S.coins;playCoin();}
   const xpGain=(2+Math.floor(score/10))*comboMult;addXP(xpGain);
   playHit(combo);
   triggerHitEffect(x,y);
-  addPopup(x,y-28,ec?'+'+coinMult+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
+  addPopup(x,y-28,ec?'+'+ec+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
   shake=6+Math.min(score*.35,12);
   goodFlash=Math.min(.04+score*.008,.28);
   updateScore();
@@ -1578,6 +1628,7 @@ function registerPoint(x,y,b){
 function startGame(){
   initAudio();
   cancelAnimationFrame(raf);
+  cancelAnimationFrame(menuRaf);menuLoopRunning=false;
   score=0;particles=[];popups=[];shake=0;wrongFlash=0;goodFlash=0;
   racketPulse=0;racketSpin=0;lastDirIdx=-1;dirStreak=0;effectBag=[];
   combo=0;comboMult=1;peakCombo=0;batTrail=[];
@@ -1602,6 +1653,12 @@ function actBalls(){return balls.filter(b=>!b.departing);}
 
 function loop(){
   if(gameState!=='playing')return;
+  // Keyboard movement
+  const kspeed=6;
+  if(keys['ArrowUp']||keys['w']||keys['W'])racket.y=Math.max(20,racket.y-kspeed);
+  if(keys['ArrowDown']||keys['s']||keys['S'])racket.y=Math.min(H-20,racket.y+kspeed);
+  if(keys['ArrowLeft']||keys['a']||keys['A'])racket.x=Math.max(20,racket.x-kspeed);
+  if(keys['ArrowRight']||keys['d']||keys['D'])racket.x=Math.min(W-20,racket.x+kspeed);
   // Power-up timer
   if(powerupTimer>0){powerupTimer--;if(powerupTimer===0)deactivatePowerup();}
 
@@ -1616,7 +1673,7 @@ function loop(){
       const side=outSide(b);
       if(side){
         if(b.bomb){
-          if(correctSide(b.dir,side)){b.remove=true;} // bomb exits correct side: disappear silently
+          if(correctSide(b.dir,side)){b.remove=true;S.stats.bombsAvoided++;checkAchievement('bombsAvoided',S.stats.bombsAvoided);} // bomb exits correct side: disappear silently
           else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
         } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
         else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
@@ -1649,6 +1706,8 @@ function loop(){
   }
   balls=balls.filter(b=>!b.remove&&!(b.departing&&outSide(b)));
   if(balls.length===0)spawnBall();
+  const activeBallCount=balls.filter(b=>!b.departing&&!b.remove).length;
+  if(score>=30&&activeBallCount===1&&Math.random()<0.004)spawnBall();
   particles.forEach(p=>{
     switch(p.type){
       case 'ring':p.radius+=p.radiusV;p.radiusV*=.93;p.life-=p.decay;break;
@@ -1717,6 +1776,24 @@ function draw(){
     ctx.font='bold '+fs+'px Orbitron,Arial';
     ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.strokeText('x'+comboMult+' · '+combo,W-14,H-14);
     ctx.fillStyle=col;ctx.fillText('x'+comboMult+' · '+combo,W-14,H-14);
+    ctx.restore();
+  }
+  // Multi-ball indicator
+  const activeBalls=balls.filter(b=>!b.departing&&!b.remove);
+  if(activeBalls.length>=2){
+    ctx.save();ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.font='bold 15px Orbitron,Arial';ctx.fillStyle='#ff8800';
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.strokeText('2 BALLEN!',W/2,6);
+    ctx.fillText('2 BALLEN!',W/2,6);
+    ctx.restore();
+  }
+  // Speed indicator
+  if(balls.length>0){
+    const sb=balls.find(b=>!b.departing)||balls[0];
+    const spd=Math.hypot(sb.vx,sb.vy).toFixed(1);
+    ctx.save();ctx.textAlign='right';ctx.textBaseline='top';
+    ctx.font='11px Rajdhani,Arial';ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.fillText('⚡ '+spd,W-14,14);
     ctx.restore();
   }
   drawPopups();ctx.restore();
@@ -1878,7 +1955,12 @@ const DIR_COLORS={Omhoog:'#00cc44',Rechts:'#f0c000',Omlaag:'#2299ff',Links:'#ee2
 
 function drawDirectionIndicator(){
   const active=actBalls();if(!active.length)return;
-  const d=active[0].dir,pad=55;let ax,ay,wx,wy;
+  const nearest=active.reduce((a,b)=>{
+    const da=Math.hypot(a.x-racket.x,a.y-racket.y);
+    const db=Math.hypot(b.x-racket.x,b.y-racket.y);
+    return da<db?a:b;
+  });
+  const d=nearest.dir,pad=55;let ax,ay,wx,wy;
   if(d.dy===-1){ax=W/2;ay=pad;wx=W/2;wy=pad+32;}
   else if(d.dy===1){ax=W/2;ay=H-pad;wx=W/2;wy=H-pad-32;}
   else if(d.dx===-1){ax=pad;ay=H/2;wx=pad;wy=H/2+34;}
@@ -1955,8 +2037,12 @@ function triggerGameOver(reden){
   // Update daily stats
   dailyGames++;
   const ec=Math.floor(score/3);S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;S.stats.gamesPlayed++;
-  if(score>S.best)S.best=score;
+  if(score>S.best){S.stats.newHighscoreSet++;checkAchievement('newHighscoreSet',S.stats.newHighscoreSet);S.best=score;}
   if(savedPeakCombo>(S.stats.bestCombo||0))S.stats.bestCombo=savedPeakCombo;
+  // Insert into top 5 scores
+  S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
+  S.topScores.sort((a,b)=>b.score-a.score);
+  S.topScores=S.topScores.slice(0,5);
   addXP(Math.floor(score*1.5));
   checkAchievement('gamesPlayed',S.stats.gamesPlayed);
   checkAchievement('totalCoins',S.stats.totalCoins);
@@ -1993,13 +2079,15 @@ function showMenu(){
   gameState='menu';cancelAnimationFrame(raf);
   const xpNeeded=S.level<20?xpForLevel(S.level):0;
   const xpPct=S.level>=20?100:Math.min(100,S.xp/xpNeeded*100);
+  const prestigeBadge=S.prestige>0?`<span style="font-size:1rem;margin-left:6px">${'⭐'.repeat(Math.min(S.prestige,5))}</span>`:'';
+  const streakHtml=S.loginStreak>0?`<div style="margin-top:6px;font-size:.8rem;color:#ff8800">🔥 ${S.loginStreak} dagen ingelogd op rij</div>`:'';
   overlay.innerHTML=`<div class="panel" style="max-width:520px">
     <div style="font-size:2rem">🏓</div>
     <h1>Ping Pong Blaster</h1>
     <div class="level-card">
       <div>
         <div style="font-size:.7rem;color:#556;margin-bottom:2px">SMASH SEIZOEN · LEVEL</div>
-        <div class="level-num">${S.level}</div>
+        <div class="level-num">${S.level}${prestigeBadge}</div>
       </div>
       <div class="level-info">
         <div style="font-size:.85rem;font-weight:700">${getLevelTitle(S.level)}</div>
@@ -2007,6 +2095,7 @@ function showMenu(){
         <div class="xp-bar-large"><div class="xp-fill-large" style="width:${xpPct}%"></div></div>
       </div>
     </div>
+    ${streakHtml}
     <div class="rules" style="font-size:.8rem">🏓 Sla de bal naar de aangegeven kant<br>
     ⭐ Verdien XP en stijg in level<br>
     🪙 Elke 3 punten = 1 muntje · Winkel & kisten</div>
@@ -2023,11 +2112,14 @@ function showMenu(){
     <div class="btnrow" style="margin-top:6px">
       <button class="btn secondary" onclick="showChallenges()">📅 Dagelijks</button>
       <button class="btn secondary" onclick="showStats()">📊 Statistieken</button>
+      <button class="btn secondary" onclick="showTopScores()">🏅 Top Scores</button>
     </div>
+    ${S.level>=20?`<div class="btnrow" style="margin-top:6px"><button class="btn gold" onclick="showPrestige()">⚡ Prestige</button></div>`:''}
     <div style="margin-top:10px;color:#334;font-size:.78rem">Beste: ${S.best} · Muntjes: ${S.coins} 🪙</div>
   </div>`;
   overlay.style.display='flex';
   updateXpUI();
+  initMenuBalls();startMenuLoop();
 }
 
 function getLevelTitle(lvl){
@@ -2036,13 +2128,49 @@ function getLevelTitle(lvl){
   if(lvl>=5)return'🏓 Serveer Pro';if(lvl>=3)return'🌱 Lob Beginner';return'🥚 Nieuweling';
 }
 
+// ── FEATURED DAILY SHOP ITEM ─────────────────────────────────────────────────
+function updateFeaturedItem(){
+  const today=new Date().toDateString();
+  if(S.featuredDate===today&&S.featuredItem)return;
+  const allShopItems=[...BATS,...MAPS,...BALL_SKINS].filter(i=>i.source==='shop'&&i.price>0);
+  if(!allShopItems.length)return;
+  const item=allShopItems[Math.floor(Math.random()*allShopItems.length)];
+  const type=BATS.find(b=>b.id===item.id)?'bat':MAPS.find(m=>m.id===item.id)?'map':'ball';
+  S.featuredItem={id:item.id,type,originalPrice:item.price,discountedPrice:Math.floor(item.price*0.8)};
+  S.featuredDate=today;
+  saveState();
+}
+
 // ── SHOP ─────────────────────────────────────────────────────────────────────
 let shopTab='bats';
-function showShop(){gameState='shop';renderShop();}
+function showShop(){gameState='shop';renderShop();startMenuLoop();}
 function renderShop(){
+  // Build featured item HTML
+  let featuredHtml='';
+  if(S.featuredItem){
+    const fi=S.featuredItem;
+    const allItems=[...BATS,...MAPS,...BALL_SKINS];
+    const fItemDef=allItems.find(i=>i.id===fi.id);
+    const fOwned=(fi.type==='bat'?S.ownedBats:fi.type==='map'?S.ownedMaps:S.ownedBallSkins).includes(fi.id);
+    if(fItemDef&&!fOwned){
+      const fTab=fi.type==='bat'?'bats':fi.type==='map'?'maps':'balls';
+      featuredHtml=`<div style="background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.35);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:.8rem;font-weight:700;color:#ffd700;margin-bottom:6px">🌟 Dagelijks Uitgelicht</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:1.6rem">${fItemDef.emoji}</span>
+          <div style="flex:1">
+            <div style="font-size:.9rem;font-weight:700">${fItemDef.name}</div>
+            <div style="font-size:.8rem;color:#888;margin-top:2px"><span style="text-decoration:line-through;color:#556">🪙 ${fi.originalPrice}</span> <span style="color:#44ff88;font-weight:700">🪙 ${fi.discountedPrice}</span> <span style="color:#ffd700;font-size:.75rem">-20%</span></div>
+          </div>
+          <button class="btn gold" style="padding:6px 14px;font-size:.78rem" onclick="buyFeaturedItem()" ${S.coins<fi.discountedPrice?'disabled':''}>Kopen</button>
+        </div>
+      </div>`;
+    }
+  }
   overlay.innerHTML=`<div class="panel" style="max-width:580px">
     <h1 style="font-size:1.4rem">🛒 Winkel</h1>
     <div style="color:var(--coin);font-weight:700;margin-bottom:10px;font-family:'Orbitron',monospace">🪙 ${S.coins} muntjes</div>
+    ${featuredHtml}
     <div class="tabs">
       <button class="tab ${shopTab==='bats'?'active':''}" onclick="shopTab='bats';renderShop()">🏓 Batjes</button>
       <button class="tab ${shopTab==='maps'?'active':''}" onclick="shopTab='maps';renderShop()">🗺️ Velden</button>
@@ -2107,6 +2235,19 @@ function buyItem(tab,id,price){
   selectItem(tab,id);
   checkAllAchievements();
 }
+function buyFeaturedItem(){
+  if(!S.featuredItem)return;
+  const fi=S.featuredItem;
+  if(S.coins<fi.discountedPrice){showToast('❌ Niet genoeg muntjes!');return;}
+  S.coins-=fi.discountedPrice;
+  const tab=fi.type==='bat'?'bats':fi.type==='map'?'maps':'balls';
+  if(fi.type==='bat')S.ownedBats.push(fi.id);
+  else if(fi.type==='map')S.ownedMaps.push(fi.id);
+  else S.ownedBallSkins.push(fi.id);
+  selectItem(tab,fi.id);
+  showToast(`🌟 <strong>Uitgelicht item gekocht!</strong> -20% korting!`,'lvl-toast',3500);
+  checkAllAchievements();
+}
 function selectItem(tab,id){
   if(tab==='bats')S.activeBat=id;
   else if(tab==='maps')S.activeMap=id;
@@ -2116,7 +2257,7 @@ function selectItem(tab,id){
 
 // ── BATTLE PASS ───────────────────────────────────────────────────────────────
 function showBP(){
-  gameState='bp';
+  gameState='bp';startMenuLoop();
   overlay.innerHTML=`<div class="panel" style="max-width:600px">
     <h1 style="font-size:1.4rem">⚡ Smash Seizoen</h1>
     <p class="subtitle" style="margin-bottom:10px">Speel en stijg in level om exclusieve beloningen te ontgrendelen!</p>
@@ -2155,12 +2296,16 @@ function showAchievements(){
     <div class="ach-grid" id="ag"></div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
   </div>`;
-  overlay.style.display='flex';
+  overlay.style.display='flex';startMenuLoop();
   const ag=document.getElementById('ag');
   const statMap={totalHits:S.stats.totalHits,gamesPlayed:S.stats.gamesPlayed,
     totalCoins:S.stats.totalCoins,bestScore:S.stats.bestScore,level:S.level,
     cratesOpened:S.stats.cratesOpened,legendaryFound:S.stats.legendaryFound,
-    shopBatsOwned:shopBatsOwned(),shopMapsOwned:shopMapsOwned()};
+    shopBatsOwned:shopBatsOwned(),shopMapsOwned:shopMapsOwned(),
+    powerupsActivated:S.stats.powerupsActivated,bombsAvoided:S.stats.bombsAvoided,
+    goldenBallsHit:S.stats.goldenBallsHit,dailyChallengesCompleted:S.stats.dailyChallengesCompleted,
+    multiballHit:S.stats.multiballHit,newHighscoreSet:S.stats.newHighscoreSet,
+    loginStreak:S.loginStreak,prestige:S.prestige};
   ACHIEVEMENTS.forEach(a=>{
     const isDone=!!S.achievements[a.id];
     const cur=Math.min(statMap[a.stat]||0,a.target);
@@ -2196,7 +2341,7 @@ function renderLoot(){
     ${lootTab==='buy'?renderBuyCrates():renderInventory()}
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
   </div>`;
-  overlay.style.display='flex';
+  overlay.style.display='flex';startMenuLoop();
 }
 
 function renderBuyCrates(){
@@ -2236,7 +2381,7 @@ function renderInventory(){
 }
 
 function showSettings(){
-  gameState='settings';
+  gameState='settings';startMenuLoop();
   overlay.innerHTML=`<div class="panel" style="max-width:420px">
     <h1 style="font-size:1.4rem">⚙️ Instellingen</h1>
     <div class="settings-row">
@@ -2308,8 +2453,11 @@ function checkDailyChallenges(){
     if(S.dailyProgress[ch.id]>=ch.target){
       ch.done=true;
       S.coins+=ch.reward;S.stats.totalCoins+=ch.reward;
+      S.stats.dailyChallengesCompleted++;
       coinUiEl.textContent=S.coins;
       showToast(`📅 <strong>Dagelijkse uitdaging!</strong><br><small>${ch.desc} · +${ch.reward} 🪙</small>`,'ach-toast',4500);
+      playComboMilestone();
+      checkAchievement('dailyChallengesCompleted',S.stats.dailyChallengesCompleted);
       changed=true;
     }
   });
@@ -2317,7 +2465,7 @@ function checkDailyChallenges(){
 }
 
 function showChallenges(){
-  gameState='challenges';
+  gameState='challenges';startMenuLoop();
   initDailyChallenges();
   const today=getTodayStr();
   const doneCount=S.dailyChallenges.filter(c=>c.done).length;
@@ -2358,7 +2506,7 @@ function statCard(icon,label,value){
 }
 
 function showStats(){
-  gameState='stats';
+  gameState='stats';startMenuLoop();
   overlay.innerHTML=`<div class="panel" style="max-width:480px">
     <h1 style="font-size:1.4rem">📊 Statistieken</h1>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
@@ -2377,10 +2525,138 @@ function showStats(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  TOP SCORES
+// ══════════════════════════════════════════════════════════════════════════════
+function showTopScores(){
+  gameState='topscores';
+  const rows=S.topScores.length?S.topScores.map((s,i)=>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,${i===0?'.08':'.04'});border-radius:8px;margin:5px 0;border:1px solid rgba(255,255,255,${i===0?'.2':'.08'})">
+      <span style="font-size:1.1rem">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span>
+      <span style="font-family:'Orbitron',monospace;font-size:1.1rem;color:${i===0?'var(--accent)':'#ccc'}">${s.score}</span>
+      <span style="font-size:.8rem;color:#556">${s.date}</span>
+    </div>`
+  ).join(''):'<div style="color:#445;padding:20px">Nog geen scores!</div>';
+  overlay.innerHTML=`<div class="panel" style="max-width:420px">
+    <h1 style="font-size:1.4rem">🏅 Top 5 Scores</h1>
+    <div style="margin:14px 0">${rows}</div>
+    <div class="btnrow"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
+  </div>`;
+  overlay.style.display='flex';
+  startMenuLoop();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PRESTIGE SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+function showPrestige(){
+  gameState='prestige';
+  overlay.innerHTML=`<div class="panel" style="max-width:440px">
+    <div style="font-size:2.5rem">🌟</div>
+    <h1 style="font-size:1.4rem">Prestige</h1>
+    <p class="subtitle">Je hebt level 20 bereikt! Doe prestige om opnieuw te beginnen met een permanente bonus.</p>
+    <div style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:14px;margin:12px 0">
+      <div style="font-size:.9rem;font-weight:700;color:#ffd700">Prestige ${S.prestige+1} Beloningen:</div>
+      <div style="font-size:.85rem;color:#aaa;margin-top:6px">
+        ✅ Prestige badge ⭐×${S.prestige+1}<br>
+        ✅ +${Math.round((S.prestige+1)*25)}% permanente muntjes bonus<br>
+        ✅ 100 muntjes startbonus
+      </div>
+      <div style="font-size:.8rem;color:#664;margin-top:8px">⚠️ Level wordt gereset naar 1 · XP wordt gewist · Items blijven behouden</div>
+    </div>
+    <div class="btnrow">
+      <button class="btn gold" onclick="doPrestige()">🌟 Prestige doen!</button>
+      <button class="btn secondary" onclick="showMenu()">← Terug</button>
+    </div>
+  </div>`;
+  overlay.style.display='flex';
+  startMenuLoop();
+}
+
+function doPrestige(){
+  S.prestige++;
+  S.prestigeMultiplier=1+S.prestige*0.25;
+  S.level=1;S.xp=0;
+  S.bpClaimedLvls=[];
+  S.coins+=100;S.stats.totalCoins+=100;
+  saveState();updateXpUI();
+  checkAchievement('prestige',S.prestige);
+  showToast(`🌟 <strong>Prestige ${S.prestige}!</strong> +${Math.round(S.prestige*25)}% muntjes bonus!`,'lvl-toast',5000);
+  showMenu();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  LOGIN STREAK
+// ══════════════════════════════════════════════════════════════════════════════
+function checkLoginStreak(){
+  const today=new Date().toDateString();
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  if(S.lastLoginDate===today)return; // already logged in today
+  if(S.lastLoginDate===yesterday){
+    S.loginStreak++;
+  } else {
+    S.loginStreak=1; // reset streak
+  }
+  S.lastLoginDate=today;
+  const bonus=Math.min(S.loginStreak*5,50); // 5 coins per day, max 50
+  S.coins+=bonus;S.stats.totalCoins+=bonus;
+  saveState();
+  checkAchievement('loginStreak',S.loginStreak);
+  setTimeout(()=>{
+    showToast(`🔥 <strong>Dag ${S.loginStreak} streak!</strong> +${bonus} muntjes bonus!`,'lvl-toast',4000);
+  },1500);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  MENU ANIMATION
+// ══════════════════════════════════════════════════════════════════════════════
+let menuRaf=null;
+let menuLoopRunning=false;
+const menuBalls=[];
+function startMenuLoop(){
+  if(menuLoopRunning)return;
+  menuLoopRunning=true;
+  cancelAnimationFrame(menuRaf);
+  menuRaf=requestAnimationFrame(menuLoop);
+}
+function initMenuBalls(){
+  menuBalls.length=0;
+  for(let i=0;i<8;i++){
+    menuBalls.push({
+      x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*2.5,vy:(Math.random()-.5)*2.5,
+      r:8+Math.random()*12,hue:Math.random()*360
+    });
+  }
+}
+function menuLoop(){
+  if(gameState!=='menu'&&gameState!=='shop'&&gameState!=='bp'&&gameState!=='achievements'&&
+     gameState!=='loot'&&gameState!=='stats'&&gameState!=='topscores'&&gameState!=='challenges'&&
+     gameState!=='settings'&&gameState!=='prestige'){
+    menuLoopRunning=false;cancelAnimationFrame(menuRaf);return;
+  }
+  const map=getMap();
+  map.drawTable(ctx,W,H);
+  menuBalls.forEach(b=>{
+    b.x+=b.vx;b.y+=b.vy;
+    if(b.x<b.r||b.x>W-b.r)b.vx*=-1;
+    if(b.y<b.r||b.y>H-b.r)b.vy*=-1;
+    ctx.save();
+    ctx.globalAlpha=0.25;
+    const g=ctx.createRadialGradient(b.x-b.r*.3,b.y-b.r*.3,b.r*.1,b.x,b.y,b.r);
+    g.addColorStop(0,'#fff');g.addColorStop(1,`hsl(${b.hue},70%,50%)`);
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+  menuRaf=requestAnimationFrame(menuLoop);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════════════════════
 checkBPRewards();
 initDailyChallenges();
+updateFeaturedItem();
+checkLoginStreak();
 updateXpUI();
 updateScore();
 showMenu();
