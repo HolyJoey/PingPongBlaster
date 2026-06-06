@@ -1003,10 +1003,11 @@ function defaultState(){
     activeBat:'classic',activeMap:'classic',
     ownedBallSkins:['classic'],activeBallSkin:'classic',
     achievements:{},
-    stats:{totalHits:0,gamesPlayed:0,totalCoins:0,bestScore:0,cratesOpened:0,legendaryFound:0},
+    stats:{totalHits:0,gamesPlayed:0,totalCoins:0,bestScore:0,cratesOpened:0,legendaryFound:0,bestCombo:0},
     bpClaimedLvls:[],
     inventory:[],  // loot items in inventory
     sfxVol:0.5,musicVol:0.25,muted:false,
+    dailyChallenges:[],dailyDate:'',dailyProgress:{},
   };
 }
 let S=loadState()||defaultState();
@@ -1015,6 +1016,10 @@ if(!S.activeBallSkin)S.activeBallSkin='classic';
 if(S.sfxVol==null)S.sfxVol=0.5;
 if(S.musicVol==null)S.musicVol=0.25;
 if(S.muted==null)S.muted=false;
+if(!S.stats.bestCombo)S.stats.bestCombo=0;
+if(!S.dailyChallenges)S.dailyChallenges=[];
+if(!S.dailyDate)S.dailyDate='';
+if(!S.dailyProgress)S.dailyProgress={};
 function saveState(){localStorage.setItem('ppb_v3',JSON.stringify(S));}
 
 // helpers
@@ -1260,6 +1265,7 @@ function playGameOver(){[330,294,262,220].forEach((f,i)=>setTimeout(()=>playTone
 function playLevelUp(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.18,'sine',.18),i*70));}
 function playCoin(){playTone(880,.07,'sine',.1);playTone(1100,.09,'sine',.07,.004);}
 function playComboMilestone(){[660,880,1100,1320].forEach((f,i)=>setTimeout(()=>playTone(f,.14,'square',.15),i*55));}
+function playPowerup(){[523,659,784].forEach((f,i)=>setTimeout(()=>{playTone(f,.18,'sine',.18);playTone(f*1.25,.12,'sine',.1);},i*80));}
 
 function startBGM(){
   stopBGM();if(!audioCtx)return;
@@ -1301,6 +1307,10 @@ let racket={x:W/2,y:H/2};
 let racketPulse=0,racketSpin=0,shake=0,shakeX=0,shakeY=0,wrongFlash=0,goodFlash=0;
 let lastDirIdx=-1,dirStreak=0,effectBag=[];
 let combo=0,comboMult=1,peakCombo=0,batTrail=[];
+// Power-ups
+let activePowerup=null,powerupTimer=0,shieldActive=false,doublerActive=false,slowmoActive=false,magnetActive=false;
+// Daily challenge per-game stats
+let gameHits=0,gameScore=0,gameCoins=0,gameCombo=0,powerupsUsed=0,goldenHit=0,dailyGames=0,scoreNoPowerup=0;
 
 canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect(),sx=W/r.width,sy=H/r.height;
@@ -1311,6 +1321,36 @@ canvas.addEventListener('touchmove',e=>{
   racket.x=(e.touches[0].clientX-r.left)*sx;racket.y=(e.touches[0].clientY-r.top)*sy;
 },{passive:false});
 
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(gameState==='playing')pauseGame();
+    else if(gameState==='paused')resumeGame();
+  }
+});
+
+function pauseGame(){
+  gameState='paused';
+  cancelAnimationFrame(raf);
+  stopBGM();
+  overlay.innerHTML=`<div class="panel" style="max-width:360px">
+    <div style="font-size:2rem">⏸️</div>
+    <h1 style="font-size:1.5rem">Gepauzeerd</h1>
+    <p class="subtitle">Score: ${score} &nbsp;·&nbsp; Combo: ${combo}</p>
+    <div class="btnrow">
+      <button class="btn" onclick="resumeGame()">▶ Doorgaan</button>
+      <button class="btn orange" onclick="triggerGameOver('Spel gestopt.')">Stoppen</button>
+    </div>
+  </div>`;
+  overlay.style.display='flex';
+}
+
+function resumeGame(){
+  gameState='playing';
+  overlay.style.display='none';
+  startBGM();
+  raf=requestAnimationFrame(loop);
+}
+
 function rndf(a,b){return a+Math.random()*(b-a);}
 function intensity(){return 1+Math.min(score/12,3.5);}
 
@@ -1319,13 +1359,20 @@ function pickDir(){
   if(idx===lastDirIdx)dirStreak++;else{lastDirIdx=idx;dirStreak=1;}return DIRS[idx];
 }
 
+const POWERUP_TYPES=['slowmo','shield','magnet','doubler'];
 function spawnBall(){
   const side=Math.floor(Math.random()*4);let x,y;
   if(side===0){x=rndf(80,W-80);y=-15;}else if(side===1){x=rndf(80,W-80);y=H+15;}
   else if(side===2){x=-15;y=rndf(80,H-80);}else{x=W+15;y=rndf(80,H-80);}
   const speed=2.2+Math.min(score*.16,10),ang=Math.atan2(H/2-y,W/2-x)+rndf(-.3,.3);
+  const r=Math.random();
+  let bomb=false,golden=false,powerup=null;
+  if(r<0.05){bomb=true;}
+  else if(r<0.08){golden=true;}
+  else if(r<0.20){powerup=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];}
   balls.push({x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:13,rot:0,dir:pickDir(),
-    departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[]});
+    departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[],
+    bomb,golden,powerup});
 }
 
 function outSide(b){
@@ -1468,24 +1515,64 @@ function addPopup(x,y,text,col){
   popups.push({x,y,vy:-1.4,life:1,age:0,text,size:22+Math.min(score*.7,28),col:col||'#00ff99'});
 }
 
-function registerPoint(x,y){
-  score++;S.stats.totalHits++;
+function activatePowerup(type){
+  activePowerup=type;powerupTimer=600;
+  if(type==='slowmo'){slowmoActive=true;}
+  else if(type==='shield'){shieldActive=true;}
+  else if(type==='magnet'){magnetActive=true;}
+  else if(type==='doubler'){doublerActive=true;}
+  powerupsUsed++;
+  const names={slowmo:'⏱️ Slow-mo!',shield:'🛡️ Schild!',magnet:'🧲 Magneet!',doubler:'💰 Verdubbeling!'};
+  showToast(names[type]||'Power-up!');
+  playPowerup();
+}
+function deactivatePowerup(){
+  slowmoActive=false;magnetActive=false;doublerActive=false;shieldActive=false;activePowerup=null;powerupTimer=0;
+}
+
+function registerPoint(x,y,b){
+  score++;S.stats.totalHits++;gameHits++;
   combo++;
   if(combo>peakCombo)peakCombo=combo;
+  if(combo>gameCombo)gameCombo=combo;
   const prevMult=comboMult;
   if(combo>=20)comboMult=4;else if(combo>=10)comboMult=3;else if(combo>=5)comboMult=2;else comboMult=1;
   if(comboMult>prevMult){playComboMilestone();addPopup(x,y-44,'+COMBO x'+comboMult+'!','#ff9500');showToast('🔥 Combo x'+comboMult+'!');}
-  const ec=score%3===0?comboMult:0;
-  if(ec){S.coins+=ec;S.stats.totalCoins+=ec;coinUiEl.textContent=S.coins;playCoin();}
+
+  // Golden ball special award
+  if(b&&b.golden){
+    goldenHit++;
+    const goldenCoins=5*comboMult;
+    S.coins+=goldenCoins;S.stats.totalCoins+=goldenCoins;gameCoins+=goldenCoins;coinUiEl.textContent=S.coins;playCoin();
+    addPopup(x,y-28,'+5⭐ GOUD!','#ffd700');
+    shake=8+Math.min(score*.35,12);goodFlash=Math.min(.04+score*.008,.28);
+    triggerHitEffect(x,y);playHit(combo);
+    updateScore();
+    checkAchievement('totalHits',S.stats.totalHits);
+    if(score>S.stats.bestScore){S.stats.bestScore=score;checkAchievement('bestScore',S.stats.bestScore);}
+    if(!activePowerup)scoreNoPowerup=score;
+    gameScore=score;checkDailyChallenges();return;
+  }
+
+  // Power-up ball activation
+  if(b&&b.powerup){
+    activatePowerup(b.powerup);
+  }
+
+  const coinMult=doublerActive?comboMult*2:comboMult;
+  const ec=score%3===0?coinMult:0;
+  if(ec){S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;coinUiEl.textContent=S.coins;playCoin();}
   const xpGain=(2+Math.floor(score/10))*comboMult;addXP(xpGain);
   playHit(combo);
   triggerHitEffect(x,y);
-  addPopup(x,y-28,ec?'+'+comboMult+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
+  addPopup(x,y-28,ec?'+'+coinMult+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
   shake=6+Math.min(score*.35,12);
   goodFlash=Math.min(.04+score*.008,.28);
   updateScore();
   checkAchievement('totalHits',S.stats.totalHits);
   if(score>S.stats.bestScore){S.stats.bestScore=score;checkAchievement('bestScore',S.stats.bestScore);}
+  if(!activePowerup)scoreNoPowerup=score;
+  gameScore=score;checkDailyChallenges();
 }
 
 function startGame(){
@@ -1494,6 +1581,10 @@ function startGame(){
   score=0;particles=[];popups=[];shake=0;wrongFlash=0;goodFlash=0;
   racketPulse=0;racketSpin=0;lastDirIdx=-1;dirStreak=0;effectBag=[];
   combo=0;comboMult=1;peakCombo=0;batTrail=[];
+  // Power-up reset
+  deactivatePowerup();powerupTimer=0;
+  // Per-game stats reset
+  gameHits=0;gameScore=0;gameCoins=0;gameCombo=0;powerupsUsed=0;goldenHit=0;scoreNoPowerup=0;
   balls=[];spawnBall();
   overlay.style.display='none';
   gameState='playing';
@@ -1511,23 +1602,47 @@ function actBalls(){return balls.filter(b=>!b.departing);}
 
 function loop(){
   if(gameState!=='playing')return;
+  // Power-up timer
+  if(powerupTimer>0){powerupTimer--;if(powerupTimer===0)deactivatePowerup();}
+
   for(let i=0;i<balls.length;i++){
     const b=balls[i];
     if(!b.departing){
-      b.x+=b.vx;b.y+=b.vy;b.rot+=.07;
+      const speedMult=slowmoActive?0.5:1;
+      b.x+=b.vx*speedMult;b.y+=b.vy*speedMult;b.rot+=.07;
+      // Magnet: pull toward racket
+      if(magnetActive){b.vx+=0.04*(racket.x-b.x)/Math.max(1,Math.hypot(racket.x-b.x,racket.y-b.y))*Math.hypot(racket.x-b.x,racket.y-b.y)/100;}
       if(b.cooldown>0)b.cooldown--;
       const side=outSide(b);
-      if(side){if(correctSide(b.dir,side)){registerPoint(b.x,b.y);b.remove=true;}
-        else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}}
+      if(side){
+        if(b.bomb){
+          if(correctSide(b.dir,side)){b.remove=true;} // bomb exits correct side: disappear silently
+          else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
+        } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
+        else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
+      }
       else if(b.cooldown<=0){
         const dx=b.x-racket.x,dy=b.y-racket.y,dist=Math.hypot(dx,dy);
         if(dist<b.r+26){
+          if(b.bomb){triggerGameOver('💣 Je raakte de bom!');return;}
           const nx=dx/dist,ny=dy/dist,alignment=nx*b.dir.dx+ny*b.dir.dy;
           b.x+=nx*(b.r+28-dist+2);b.y+=ny*(b.r+28-dist+2);
           racketPulse=1;racketSpin=(Math.random()<.5?-1:1)*.18;
           if(alignment>.3){const speed=Math.hypot(b.vx,b.vy)*1.1;
-            b.departing=true;b.departVx=b.dir.dx*speed;b.departVy=b.dir.dy*speed;b.flash=1;registerPoint(b.x,b.y);}
-          else{const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;playWrong();}}}
+            b.departing=true;b.departVx=b.dir.dx*speed;b.departVy=b.dir.dy*speed;b.flash=1;registerPoint(b.x,b.y,b);}
+          else{
+            if(shieldActive){
+              // Shield absorbs wrong hit
+              shieldActive=false;activePowerup=null;powerupTimer=0;
+              const dot2=b.vx*nx+b.vy*ny;b.vx-=2*dot2*nx;b.vy-=2*dot2*ny;b.cooldown=8;
+              combo=0;comboMult=1;triggerWrongEffect(b.x,b.y);
+              showToast('🛡️ Schild geabsorbeerd!');
+            } else {
+              const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;playWrong();
+            }
+          }
+        }
+      }
     } else {b.x+=b.departVx;b.y+=b.departVy;b.rot+=.12;b.flash=Math.max(0,b.flash-.06);}
     b.trail.push({x:b.x,y:b.y});if(b.trail.length>6)b.trail.shift();
     if(b.spawnT<1)b.spawnT=Math.min(1,b.spawnT+.12);
@@ -1582,7 +1697,7 @@ function draw(){
   const map=getMap();map.drawTable(ctx,W,H);
   if(goodFlash>0){ctx.globalAlpha=goodFlash;ctx.fillStyle=map.flashGood||'#f1c40f';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
   if(wrongFlash>0){ctx.globalAlpha=wrongFlash*.35;ctx.fillStyle=map.flashBad||'#e74c3c';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
-  drawNet(map);drawParticles();balls.forEach(drawBall);drawDirectionIndicator();
+  drawNet(map);drawParticles();balls.forEach(drawBall);drawDirectionIndicator();drawPowerupIndicator();
   ctx.save();
   for(let i=0;i<batTrail.length-1;i++){
     const t=batTrail[i];
@@ -1698,10 +1813,64 @@ function drawParticles(){
 
 function drawBall(b){
   const skin=BALL_SKINS.find(s=>s.id===S.activeBallSkin)||BALL_SKINS[0];
+  // Trail
+  const trailCol=b.bomb?'#ff2200':(b.golden?'#ffd700':(b.powerup?'#00ffee':skin.trailColor||'#ffffff'));
   for(let i=0;i<b.trail.length-1;i++){
     const t=b.trail[i],a=(i+1)/b.trail.length;
-    ctx.globalAlpha=a*.22;ctx.fillStyle=skin.trailColor||'#ffffff';ctx.beginPath();ctx.arc(t.x,t.y,b.r*.7*a,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=a*.22;ctx.fillStyle=trailCol;ctx.beginPath();ctx.arc(t.x,t.y,b.r*.7*a,0,Math.PI*2);ctx.fill();}
   ctx.globalAlpha=1;
+
+  if(b.bomb){
+    // Bomb ball
+    ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);
+    const pulse=.5+.5*Math.sin(Date.now()/200);
+    ctx.shadowColor='#ff2200';ctx.shadowBlur=14+pulse*10;
+    const g=ctx.createRadialGradient(-b.r*.3,-b.r*.3,b.r*.1,0,0,b.r);
+    g.addColorStop(0,'#444');g.addColorStop(.5,'#1a0000');g.addColorStop(1,'#000');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;ctx.font=(b.r*1.2)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('💣',0,1);ctx.restore();
+    return;
+  }
+
+  if(b.golden){
+    // Golden ball with sparkle
+    ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);ctx.rotate(b.rot);
+    ctx.shadowColor='#ffd700';ctx.shadowBlur=18;
+    const g=ctx.createRadialGradient(-b.r*.3,-b.r*.35,b.r*.1,0,0,b.r);
+    g.addColorStop(0,'#fffbe0');g.addColorStop(.35,'#ffe066');g.addColorStop(.7,'#d4a800');g.addColorStop(1,'#7a5c00');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    // Sparkle decorations
+    const t=Date.now()/300;
+    for(let i=0;i<4;i++){const a=(i/4)*Math.PI*2+t,r2=b.r+5+Math.sin(t+i)*3;
+      ctx.save();ctx.translate(Math.cos(a)*r2,Math.sin(a)*r2);ctx.rotate(a);
+      ctx.fillStyle='#fff8c0';ctx.font='8px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('✦',0,0);ctx.restore();}
+    ctx.font=(b.r*.9)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('⭐',0,1);
+    ctx.restore();
+    return;
+  }
+
+  if(b.powerup){
+    // Draw skin first
+    skin.draw(ctx,b);
+    // Then ring and icon overlay
+    const puColors={slowmo:'#00ffff',shield:'#4488ff',magnet:'#ff8800',doubler:'#ffd700'};
+    const puIcons={slowmo:'⏱️',shield:'🛡️',magnet:'🧲',doubler:'💰'};
+    const ringCol=puColors[b.powerup]||'#ffffff';
+    const pulse=.6+.4*Math.sin(Date.now()/180);
+    ctx.save();ctx.shadowColor=ringCol;ctx.shadowBlur=12*pulse;
+    ctx.strokeStyle=ringCol;ctx.lineWidth=2.5;ctx.globalAlpha=.85;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r+5,0,Math.PI*2);ctx.stroke();
+    ctx.shadowBlur=0;ctx.globalAlpha=1;
+    ctx.font=(b.r*.85)+'px serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText(puIcons[b.powerup]||'?',b.x,b.y-b.r-2);
+    ctx.restore();
+    return;
+  }
+
   skin.draw(ctx,b);
 }
 
@@ -1747,6 +1916,32 @@ function drawPopups(){
   ctx.globalAlpha=1;
 }
 
+function drawPowerupIndicator(){
+  if(!activePowerup||powerupTimer<=0)return;
+  const puColors={slowmo:'#00ffff',shield:'#4488ff',magnet:'#ff8800',doubler:'#ffd700'};
+  const puIcons={slowmo:'⏱️',shield:'🛡️',magnet:'🧲',doubler:'💰'};
+  const col=puColors[activePowerup]||'#ffffff';
+  const icon=puIcons[activePowerup]||'?';
+  const bx=12,by=H-70,bw=72,bh=56,br=8;
+  ctx.save();
+  ctx.globalAlpha=0.85;
+  // Background rounded rect
+  ctx.fillStyle='rgba(0,0,0,0.55)';
+  ctx.beginPath();ctx.moveTo(bx+br,by);ctx.arcTo(bx+bw,by,bx+bw,by+bh,br);ctx.arcTo(bx+bw,by+bh,bx,by+bh,br);ctx.arcTo(bx,by+bh,bx,by,br);ctx.arcTo(bx,by,bx+bw,by,br);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.globalAlpha=0.7;
+  ctx.beginPath();ctx.moveTo(bx+br,by);ctx.arcTo(bx+bw,by,bx+bw,by+bh,br);ctx.arcTo(bx+bw,by+bh,bx,by+bh,br);ctx.arcTo(bx,by+bh,bx,by,br);ctx.arcTo(bx,by,bx+bw,by,br);ctx.closePath();ctx.stroke();
+  ctx.globalAlpha=1;
+  // Icon
+  ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(icon,bx+bw/2,by+18);
+  // Timer bar
+  const barFrac=powerupTimer/600;
+  const barX=bx+4,barY=by+bh-10,barW=bw-8,barH=5;
+  ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(barX,barY,barW,barH);
+  ctx.fillStyle=col;ctx.fillRect(barX,barY,barW*barFrac,barH);
+  ctx.restore();
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 //  SCREENS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1755,19 +1950,31 @@ function triggerGameOver(reden){
   gameState='gameover';
   const savedPeakCombo=peakCombo;
   combo=0;comboMult=1;
-  const ec=Math.floor(score/3);S.coins+=ec;S.stats.totalCoins+=ec;S.stats.gamesPlayed++;
+  // Deactivate power-ups
+  deactivatePowerup();
+  // Update daily stats
+  dailyGames++;
+  const ec=Math.floor(score/3);S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;S.stats.gamesPlayed++;
   if(score>S.best)S.best=score;
+  if(savedPeakCombo>(S.stats.bestCombo||0))S.stats.bestCombo=savedPeakCombo;
   addXP(Math.floor(score*1.5));
   checkAchievement('gamesPlayed',S.stats.gamesPlayed);
   checkAchievement('totalCoins',S.stats.totalCoins);
   checkAchievement('bestScore',S.stats.bestScore);
+  // Check daily challenges on game over
+  checkDailyChallenges();
   saveState();coinUiEl.textContent=S.coins;
 
   let icon='💥',title='Game Over!',body=`${reden}<br>Je sloeg <strong>${score}</strong> ballen weg.`;
   if(score>=50){icon='🏆';title='Ongelooflijk!';}
   else if(score>=25){icon='🔥';title='Lekker bezig!';}
   body+=`<br><br>⭐ <strong>+${Math.floor(score*1.5)} XP</strong> &nbsp;·&nbsp; 🪙 <strong>+${ec} muntjes</strong>`;
-  if(savedPeakCombo>=3)body+=`<br>🔥 <strong>Beste combo: ${savedPeakCombo}</strong>`;
+  if(gameCoins>0)body+=`<br>🪙 <strong>${gameCoins} muntjes in dit potje</strong>`;
+  if(savedPeakCombo>=3){
+    const isNewComboRecord=savedPeakCombo>=(S.stats.bestCombo||0)&&savedPeakCombo>=3;
+    body+=`<br>🔥 <strong>Beste combo: ${savedPeakCombo}</strong>${isNewComboRecord?' 🌟 Nieuwe record combo!':''}`;
+  }
+  if(powerupsUsed>0)body+=`<br>⚡ <strong>${powerupsUsed} power-up(s) gebruikt</strong>`;
   if(score>0&&score===S.best)body+=`<br>🌟 <strong>Nieuwe highscore!</strong>`;
 
   overlay.innerHTML=`<div class="panel">
@@ -1812,6 +2019,10 @@ function showMenu(){
       <button class="btn secondary" onclick="showAchievements()">🏆 Prestaties</button>
       <button class="btn secondary" onclick="showLoot()">📦 Kisten</button>
       <button class="btn secondary" onclick="showSettings()">⚙️ Instellingen</button>
+    </div>
+    <div class="btnrow" style="margin-top:6px">
+      <button class="btn secondary" onclick="showChallenges()">📅 Dagelijks</button>
+      <button class="btn secondary" onclick="showStats()">📊 Statistieken</button>
     </div>
     <div style="margin-top:10px;color:#334;font-size:.78rem">Beste: ${S.best} · Muntjes: ${S.coins} 🪙</div>
   </div>`;
@@ -2049,9 +2260,127 @@ function showSettings(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  DAILY CHALLENGES
+// ══════════════════════════════════════════════════════════════════════════════
+const CHALLENGE_POOL=[
+  {id:'ch_hits15',desc:'Sla 15 ballen weg in één potje',target:15,stat:'gameHits',reward:15},
+  {id:'ch_hits30',desc:'Sla 30 ballen weg in één potje',target:30,stat:'gameHits',reward:25},
+  {id:'ch_score10',desc:'Bereik score 10',target:10,stat:'gameScore',reward:12},
+  {id:'ch_score20',desc:'Bereik score 20',target:20,stat:'gameScore',reward:20},
+  {id:'ch_score35',desc:'Bereik score 35',target:35,stat:'gameScore',reward:35},
+  {id:'ch_combo5',desc:'Bereik een combo van 5',target:5,stat:'gameCombo',reward:18},
+  {id:'ch_combo10',desc:'Bereik een combo van 10',target:10,stat:'gameCombo',reward:30},
+  {id:'ch_coins10',desc:'Verdien 10 muntjes in één potje',target:10,stat:'gameCoins',reward:15},
+  {id:'ch_powerup',desc:'Activeer een power-up',target:1,stat:'powerupsUsed',reward:20},
+  {id:'ch_golden',desc:'Sla een gouden bal weg',target:1,stat:'goldenHit',reward:25},
+  {id:'ch_games2',desc:'Speel 2 potjes',target:2,stat:'dailyGames',reward:10},
+  {id:'ch_nopowerup',desc:'Bereik score 15 zonder power-ups',target:15,stat:'scoreNoPowerup',reward:40},
+];
+
+function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+
+function initDailyChallenges(){
+  const today=getTodayStr();
+  if(S.dailyDate!==today){
+    // New day — pick 3 random challenges
+    const pool=[...CHALLENGE_POOL];
+    const picked=[];
+    while(picked.length<3&&pool.length){
+      const idx=Math.floor(Math.random()*pool.length);
+      picked.push({...pool.splice(idx,1)[0],done:false});
+    }
+    S.dailyChallenges=picked;
+    S.dailyDate=today;
+    S.dailyProgress={};
+    saveState();
+  }
+}
+
+function checkDailyChallenges(){
+  if(!S.dailyChallenges||!S.dailyChallenges.length)return;
+  const statNow={gameHits,gameScore,gameCoins,gameCombo,powerupsUsed,goldenHit,dailyGames,scoreNoPowerup};
+  let changed=false;
+  S.dailyChallenges.forEach(ch=>{
+    if(ch.done)return;
+    const val=statNow[ch.stat]||0;
+    if(!S.dailyProgress[ch.id])S.dailyProgress[ch.id]=0;
+    if(val>S.dailyProgress[ch.id])S.dailyProgress[ch.id]=val;
+    if(S.dailyProgress[ch.id]>=ch.target){
+      ch.done=true;
+      S.coins+=ch.reward;S.stats.totalCoins+=ch.reward;
+      coinUiEl.textContent=S.coins;
+      showToast(`📅 <strong>Dagelijkse uitdaging!</strong><br><small>${ch.desc} · +${ch.reward} 🪙</small>`,'ach-toast',4500);
+      changed=true;
+    }
+  });
+  if(changed)saveState();
+}
+
+function showChallenges(){
+  gameState='challenges';
+  initDailyChallenges();
+  const today=getTodayStr();
+  const doneCount=S.dailyChallenges.filter(c=>c.done).length;
+  const statNow={gameHits,gameScore,gameCoins,gameCombo,powerupsUsed,goldenHit,dailyGames,scoreNoPowerup};
+  overlay.innerHTML=`<div class="panel" style="max-width:500px">
+    <h1 style="font-size:1.4rem">📅 Dagelijkse Uitdagingen</h1>
+    <p class="subtitle" style="margin-bottom:12px">${today} · ${doneCount}/3 voltooid</p>
+    <div class="ach-grid" id="cg"></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
+  </div>`;
+  overlay.style.display='flex';
+  const cg=document.getElementById('cg');
+  S.dailyChallenges.forEach(ch=>{
+    const prog=Math.min(S.dailyProgress[ch.id]||0,ch.target);
+    const pct=Math.min(100,prog/ch.target*100);
+    const div=document.createElement('div');
+    div.className='ach-card'+(ch.done?' done':'');
+    div.innerHTML=`<div class="ach-icon">${ch.done?'✅':'📋'}</div>
+      <div style="flex:1">
+        <div class="ach-name" style="font-size:.9rem">${ch.desc}</div>
+        ${!ch.done?`<div class="ach-prog">${prog} / ${ch.target}</div>
+        <div class="ach-prog-bar"><div class="ach-prog-fill" style="width:${pct}%"></div></div>`:''}
+        <div class="ach-prog" style="margin-top:3px;color:var(--coin)">Beloning: 🪙 ${ch.reward}</div>
+      </div>`;
+    cg.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STATISTICS SCREEN
+// ══════════════════════════════════════════════════════════════════════════════
+function statCard(icon,label,value){
+  return`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;text-align:center">
+    <div style="font-size:1.5rem">${icon}</div>
+    <div style="font-size:1.3rem;font-weight:700;color:var(--accent);font-family:'Orbitron',monospace">${(value||0).toLocaleString()}</div>
+    <div style="font-size:.75rem;color:#667;margin-top:2px">${label}</div>
+  </div>`;
+}
+
+function showStats(){
+  gameState='stats';
+  overlay.innerHTML=`<div class="panel" style="max-width:480px">
+    <h1 style="font-size:1.4rem">📊 Statistieken</h1>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
+      ${statCard('🏓','Totale Treffers',S.stats.totalHits)}
+      ${statCard('🎮','Potjes Gespeeld',S.stats.gamesPlayed)}
+      ${statCard('🏆','Beste Score',S.stats.bestScore)}
+      ${statCard('🔥','Beste Combo',S.stats.bestCombo||0)}
+      ${statCard('🪙','Totale Muntjes',S.stats.totalCoins)}
+      ${statCard('📦','Kisten Geopend',S.stats.cratesOpened)}
+      ${statCard('⭐','Level',S.level)}
+      ${statCard('🌠','Legendarisch',S.stats.legendaryFound)}
+    </div>
+    <div class="btnrow"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
+  </div>`;
+  overlay.style.display='flex';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════════════════════
 checkBPRewards();
+initDailyChallenges();
 updateXpUI();
 updateScore();
 showMenu();
