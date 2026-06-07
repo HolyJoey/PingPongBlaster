@@ -1768,9 +1768,9 @@ function spawnBall(){
   const speed=2.2+Math.min(score*.16,10),ang=Math.atan2(H/2-y,W/2-x)+rndf(-.3,.3);
   const r=Math.random();
   let bomb=false,golden=false,powerup=null;
-  if(r<0.05){bomb=true;}
-  else if(r<0.08){golden=true;}
-  else if(r<0.20){powerup=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];}
+  if(r<0.025){bomb=true;}
+  else if(r<0.04){golden=true;}
+  else if(r<0.10){powerup=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];}
   const b={x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:13,rot:0,dir:pickDir(),
     departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[],
     bomb,golden,powerup};
@@ -1791,10 +1791,15 @@ function correctSide(dir,side){
 
 // ─ HIT EFFECTS ─
 const HIT_EFFECTS=['burst','shockwave','confetti','starburst','sparkle','spiral','fireworks','bubbles','bolts','glitter','portal','dna','atombomb','magnetburst','snowflake','pixelexplode','gravitwell','lasercross','inksplat','solarflare','hologram','shatter'];
+const HIT_EFFECTS_CLASSIC=['burst','shockwave','confetti','starburst','sparkle','spiral','fireworks','bubbles','bolts','glitter'];
 function nextEffect(){
-  if(!effectBag.length){effectBag=HIT_EFFECTS.map((_,i)=>i);
-    for(let i=effectBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[effectBag[i],effectBag[j]]=[effectBag[j],effectBag[i]];}}
-  return HIT_EFFECTS[effectBag.shift()];
+  if(!effectBag.length){
+    // Classic effects appear twice as often as special effects
+    const pool=[...HIT_EFFECTS_CLASSIC,...HIT_EFFECTS_CLASSIC,...HIT_EFFECTS.slice(10)];
+    effectBag=[...pool];
+    for(let i=effectBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[effectBag[i],effectBag[j]]=[effectBag[j],effectBag[i]];}
+  }
+  return effectBag.shift();
 }
 function makeBolt(x,y,angle,len){
   const pts=[{x,y}],segs=4+Math.floor(Math.random()*3),sl=len/segs;
@@ -2047,8 +2052,10 @@ function loop(){
       const side=outSide(b);
       if(side){
         if(b.bomb){
-          if(correctSide(b.dir,side)){b.remove=true;S.stats.bombsAvoided++;checkAchievement('bombsAvoided',S.stats.bombsAvoided);} // bomb exits correct side: disappear silently
-          else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
+          // Bomb reaches any wall: disappear, give point, spawn new ball
+          b.remove=true;
+          registerPoint(b.x,b.y,b);
+          spawnBall();
         } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
         else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
       }
@@ -2829,7 +2836,7 @@ function showSettings(){
       </select>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v9.0</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v9.1</div>
   </div>`;
   overlay.style.display='flex';
 }
