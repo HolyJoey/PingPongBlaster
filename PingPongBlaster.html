@@ -1374,6 +1374,7 @@ function defaultState(){
     topScores:[],
     featuredItem:null,featuredDate:'',
     favoriteEffect:'random',
+    lootHistory:[],
   };
 }
 let S=loadState()||defaultState();
@@ -1404,6 +1405,7 @@ if(!S.topScores)S.topScores=[];
 if(S.featuredItem==null)S.featuredItem=null;
 if(S.featuredDate==null)S.featuredDate='';
 if(S.favoriteEffect==null)S.favoriteEffect='random';
+if(!S.lootHistory)S.lootHistory=[];
 function saveState(){localStorage.setItem('ppb_v3',JSON.stringify(S));}
 
 // helpers
@@ -1545,24 +1547,28 @@ function openCrate(rarityKey){
   const rarity=rollLoot(def.pools);
   const loot=getLootPool(rarity);
   // grant item
-  let lootName='',lootIcon='📦';
+  let lootName='',lootIcon='📦',lootItemType='coins';
   if(loot.type==='coins'){
     S.coins+=loot.amount;S.stats.totalCoins+=loot.amount;coinUiEl.textContent=S.coins;
-    lootName=loot.amount+' Muntjes';lootIcon='🪙';
+    lootName=loot.amount+' Muntjes';lootIcon='🪙';lootItemType='coins';
+    S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='bat'){
     const bat=BATS.find(b=>b.id===loot.id);
     if(bat&&!S.ownedBats.includes(bat.id))S.ownedBats.push(bat.id);
-    lootName=bat?bat.name:'Onbekend Batje';lootIcon=bat?bat.emoji:'🏓';
+    lootName=bat?bat.name:'Onbekend Batje';lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
+    if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='map'){
     const map=MAPS.find(m=>m.id===loot.id);
     if(map&&!S.ownedMaps.includes(map.id))S.ownedMaps.push(map.id);
-    lootName=map?map.name:'Onbekend Veld';lootIcon=map?map.emoji:'🗺️';
+    lootName=map?map.name:'Onbekend Veld';lootIcon=map?map.emoji:'🗺️';lootItemType='map';
+    if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString('nl-NL')});
   }
+  if(S.lootHistory.length>50)S.lootHistory.shift();
   if(rarity==='legendary'){S.stats.legendaryFound++;checkAchievement('legendaryFound',S.stats.legendaryFound);}
   checkAchievement('cratesOpened',S.stats.cratesOpened);
   checkAllAchievements();
   saveState();
-  showLootReveal(rarityKey,rarity,lootIcon,lootName,def);
+  showLootReveal(rarityKey,rarity,lootIcon,lootName,def,loot,lootItemType);
 }
 
 function openInventoryCrate(invId){
@@ -1578,28 +1584,40 @@ function openCrateNoCharge(rarityKey){
   const def=CRATE_DEFS[rarityKey];
   const rarity=rollLoot(def.pools);
   const loot=getLootPool(rarity);
-  let lootName='',lootIcon='📦';
+  let lootName='',lootIcon='📦',lootItemType='coins';
   if(loot.type==='coins'){
     S.coins+=loot.amount;S.stats.totalCoins+=loot.amount;coinUiEl.textContent=S.coins;
-    lootName=loot.amount+' Muntjes';lootIcon='🪙';
+    lootName=loot.amount+' Muntjes';lootIcon='🪙';lootItemType='coins';
+    S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='bat'){
     const bat=BATS.find(b=>b.id===loot.id);
     if(bat&&!S.ownedBats.includes(bat.id))S.ownedBats.push(bat.id);
-    lootName=bat?bat.name:'Onbekend Batje';lootIcon=bat?bat.emoji:'🏓';
+    lootName=bat?bat.name:'Onbekend Batje';lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
+    if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='map'){
     const map=MAPS.find(m=>m.id===loot.id);
     if(map&&!S.ownedMaps.includes(map.id))S.ownedMaps.push(map.id);
-    lootName=map?map.name:'Onbekend Veld';lootIcon=map?map.emoji:'🗺️';
+    lootName=map?map.name:'Onbekend Veld';lootIcon=map?map.emoji:'🗺️';lootItemType='map';
+    if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString('nl-NL')});
   }
+  if(S.lootHistory.length>50)S.lootHistory.shift();
   if(rarity==='legendary'){S.stats.legendaryFound++;checkAchievement('legendaryFound',S.stats.legendaryFound);}
   checkAchievement('cratesOpened',S.stats.cratesOpened);
   saveState();
-  showLootReveal(rarityKey,rarity,lootIcon,lootName,def);
+  showLootReveal(rarityKey,rarity,lootIcon,lootName,def,loot,lootItemType);
 }
 
-function showLootReveal(crateRarity,itemRarity,icon,name,def){
+function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
   const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
   if(itemRarity==='legendary')showToast(`🌠 <strong>LEGENDARISCH!</strong> ${icon} ${name}`,'legendary-toast',6000);
+  let equipBtn='';
+  if(loot&&lootItemType==='bat'&&loot.id){
+    equipBtn=`<button class="btn" onclick="S.activeBat='${loot.id}';saveState();showLoot()">🏓 Uitrusten</button>`;
+  } else if(loot&&lootItemType==='map'&&loot.id){
+    equipBtn=`<button class="btn" onclick="S.activeMap='${loot.id}';saveState();showLoot()">🗺️ Uitrusten</button>`;
+  } else if(loot&&lootItemType==='ballskin'&&loot.id){
+    equipBtn=`<button class="btn" onclick="S.activeBallSkin='${loot.id}';saveState();showLoot()">⚽ Uitrusten</button>`;
+  }
   overlay.innerHTML=`<div class="panel" style="max-width:380px">
     <h1 style="font-size:1.3rem">${def.icon} ${def.name} Geopend!</h1>
     <div class="loot-reveal">
@@ -1609,6 +1627,7 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def){
       <div style="font-size:1.1rem;font-weight:700;margin-top:6px">${name}</div>
     </div>
     <div class="btnrow" style="margin-top:16px">
+      ${equipBtn}
       <button class="btn" onclick="showLoot()">Nog een kist!</button>
       <button class="btn secondary" onclick="showMenu()">Menu</button>
     </div>
@@ -1656,6 +1675,16 @@ function playLevelUp(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone
 function playCoin(){playTone(880,.07,'sine',.1);playTone(1100,.09,'sine',.07,.004);}
 function playComboMilestone(){[660,880,1100,1320].forEach((f,i)=>setTimeout(()=>playTone(f,.14,'square',.15),i*55));}
 function playPowerup(){[523,659,784].forEach((f,i)=>setTimeout(()=>{playTone(f,.18,'sine',.18);playTone(f*1.25,.12,'sine',.1);},i*80));}
+function playHover(){
+  if(!audioCtx||S.muted)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(masterGainNode);
+  o.frequency.value=880;o.type='sine';
+  g.gain.setValueAtTime(0,audioCtx.currentTime);
+  g.gain.linearRampToValueAtTime(0.04*S.sfxVol,audioCtx.currentTime+0.01);
+  g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.06);
+  o.start();o.stop(audioCtx.currentTime+0.06);
+}
 
 function startBGM(){
   stopBGM();if(!audioCtx)return;
@@ -1728,6 +1757,11 @@ document.addEventListener('keydown',e=>{
   }
 });
 document.addEventListener('keyup',e=>{keys[e.key]=false;});
+document.addEventListener('mouseover',e=>{
+  if(e.target.closest('.btn,.shop-item,.tab,.crate,.ach-card,.bp-node,.menu-grid .btn')){
+    playHover();
+  }
+});
 
 function pauseGame(){
   gameState='paused';
@@ -2611,12 +2645,15 @@ function renderShop(){
   overlay.style.display='flex';
   const grid=document.getElementById('sg');
   let items,owned,curActive;
+  const rarityOrder={common:0,rare:1,epic:2,legendary:3};
   if(shopTab==='balls'){
     items=BALL_SKINS.filter(i=>i.source==='shop');
+    items.sort((a,b)=>(rarityOrder[a.rarity]||0)-(rarityOrder[b.rarity]||0));
     owned=S.ownedBallSkins;
     curActive=S.activeBallSkin;
   } else {
     items=(shopTab==='bats'?BATS:MAPS).filter(i=>i.source==='shop');
+    items.sort((a,b)=>(rarityOrder[a.rarity]||0)-(rarityOrder[b.rarity]||0));
     owned=shopTab==='bats'?S.ownedBats:S.ownedMaps;
     curActive=shopTab==='bats'?S.activeBat:S.activeMap;
   }
@@ -2766,11 +2803,27 @@ function renderLoot(){
     <div class="tabs">
       <button class="tab ${lootTab==='buy'?'active':''}" onclick="lootTab='buy';renderLoot()">🛒 Kopen</button>
       <button class="tab ${lootTab==='inv'?'active':''}" onclick="lootTab='inv';renderLoot()">🎒 Inventaris ${invCrates.length>0?'('+invCrates.length+')':''}</button>
+      <button class="tab ${lootTab==='history'?'active':''}" onclick="lootTab='history';renderLoot()">📜 Geschiedenis</button>
     </div>
-    ${lootTab==='buy'?renderBuyCrates():renderInventory()}
+    ${lootTab==='buy'?renderBuyCrates():lootTab==='inv'?renderInventory():renderLootHistory()}
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
   </div>`;
   overlay.style.display='flex';startMenuLoop();
+}
+function renderLootHistory(){
+  if(!S.lootHistory||!S.lootHistory.length)
+    return`<div style="color:#445;text-align:center;padding:20px">Nog geen kisten geopend.<br>Open een kist om je geschiedenis bij te houden!</div>`;
+  const items=[...S.lootHistory].reverse(); // newest first
+  return`<div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+    ${items.map(i=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px">
+      <span style="font-size:1.4rem">${i.emoji}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:.88rem">${i.name}</div>
+        <div style="font-size:.72rem;color:#556">${i.date}</div>
+      </div>
+      <span style="font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(255,255,255,0.08);color:${{common:'#9aaab8',rare:'#4a9eff',epic:'#b94fff',legendary:'#ff9500'}[i.rarity]||'#aaa'}">${{common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'}[i.rarity]||''}</span>
+    </div>`).join('')}
+  </div>`;
 }
 
 function renderBuyCrates(){
@@ -2836,7 +2889,7 @@ function showSettings(){
       </select>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="showMenu()">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v9.1</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v9.2</div>
   </div>`;
   overlay.style.display='flex';
 }
