@@ -1894,7 +1894,7 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
     equipBtn=`<button class="btn" onclick="S.activeBat='${loot.id}';saveState();showLoot()">🏓 Uitrusten</button>`;
   } else if(loot&&lootItemType==='map'&&loot.id){
     equipBtn=`<button class="btn" onclick="S.activeMap='${loot.id}';saveState();showLoot()">🗺️ Uitrusten</button>`;
-  } else if(loot&&lootItemType==='ballskin'&&loot.id){
+  } else if(loot&&lootItemType==='ball'&&loot.id){
     equipBtn=`<button class="btn" onclick="S.activeBallSkin='${loot.id}';saveState();showLoot()">⚽ Uitrusten</button>`;
   }
   overlay.innerHTML=`<div class="panel" style="max-width:380px">
