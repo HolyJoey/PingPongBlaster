@@ -186,6 +186,14 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 #muteBtn{background:none;border:1px solid rgba(0,255,153,0.25);color:#8fc8a8;padding:4px 10px;border-radius:16px;cursor:pointer;font-size:.85rem;font-family:'Rajdhani',sans-serif;font-weight:700;transition:all .18s;}
 #muteBtn:hover{border-color:var(--accent);color:var(--accent);}
 #muteBtn.muted{color:var(--accent2);border-color:rgba(255,107,53,.4);}
+
+.crate-reel-wrap{position:relative;width:100%;max-width:440px;height:90px;overflow:hidden;border:2px solid rgba(0,255,153,0.3);border-radius:10px;background:rgba(0,0,0,0.4);margin:16px auto;}
+.crate-reel{display:flex;align-items:center;height:90px;will-change:transform;}
+.reel-item{flex-shrink:0;width:72px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,0.06);font-size:1.8rem;}
+.reel-item.winner{background:rgba(0,255,153,0.1);}
+.reel-center-line{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(0,255,153,0.8);transform:translateX(-50%);box-shadow:0 0 8px rgba(0,255,153,0.6);pointer-events:none;z-index:2;}
+.reel-arrow-top{position:absolute;left:50%;top:-1px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid rgba(0,255,153,0.9);z-index:3;}
+.reel-arrow-bot{position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:10px solid rgba(0,255,153,0.9);z-index:3;}
 </style>
 </head>
 <body>
@@ -1888,30 +1896,74 @@ function openCrateNoCharge(rarityKey){
 
 function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
   const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
-  if(itemRarity==='legendary')showToast(`🌠 <strong>LEGENDARISCH!</strong> ${icon} ${name}`,'legendary-toast',6000);
-  let equipBtn='';
-  if(loot&&lootItemType==='bat'&&loot.id){
-    equipBtn=`<button class="btn" onclick="S.activeBat='${loot.id}';saveState();showLoot()">🏓 Uitrusten</button>`;
-  } else if(loot&&lootItemType==='map'&&loot.id){
-    equipBtn=`<button class="btn" onclick="S.activeMap='${loot.id}';saveState();showLoot()">🗺️ Uitrusten</button>`;
-  } else if(loot&&lootItemType==='ball'&&loot.id){
-    equipBtn=`<button class="btn" onclick="S.activeBallSkin='${loot.id}';saveState();showLoot()">⚽ Uitrusten</button>`;
+  const rarityColors={common:'#9aaab8',rare:'#4a9eff',epic:'#b94fff',legendary:'#ff9500'};
+
+  // Build pool of all loot items for filler icons
+  const allItems=[...BATS,...MAPS,...BALL_SKINS].filter(i=>i.source==='loot'||i.source==='shop');
+  const fillerEmojis=allItems.map(i=>i.emoji);
+  if(fillerEmojis.length<5) fillerEmojis.push('🏓','⚽','🗺️','✨','💫');
+
+  // Build reel: 28 items, winner at index 23
+  const WINNER_IDX=23;
+  const reelItems=[];
+  for(let i=0;i<28;i++){
+    if(i===WINNER_IDX) reelItems.push({emoji:icon,isWinner:true});
+    else reelItems.push({emoji:fillerEmojis[Math.floor(Math.random()*fillerEmojis.length)],isWinner:false});
   }
-  overlay.innerHTML=`<div class="panel" style="max-width:380px">
-    <h1 style="font-size:1.3rem">${def.icon} ${def.name} Geopend!</h1>
-    <div class="loot-reveal">
-      <div style="font-size:.9rem;color:#778;margin:10px 0">Je hebt gekregen:</div>
-      <div class="item-big">${icon}</div>
-      <div class="rarity-glow ${itemRarity}">${rarityNames[itemRarity]}</div>
-      <div style="font-size:1.1rem;font-weight:700;margin-top:6px">${name}</div>
+
+  // Equip button logic
+  let equipAction='';
+  if(loot&&loot.id){
+    if(lootItemType==='bat') equipAction=`S.activeBat='${loot.id}';saveState();showInventory()`;
+    else if(lootItemType==='map') equipAction=`S.activeMap='${loot.id}';saveState();showInventory()`;
+    else if(lootItemType==='ball') equipAction=`S.activeBallSkin='${loot.id}';saveState();showInventory()`;
+  }
+
+  overlay.innerHTML=`<div class="panel" style="max-width:460px;text-align:center">
+    <h1 style="font-size:1.2rem;margin-bottom:4px">${def.icon} ${def.name} Geopend!</h1>
+    <p style="color:#556;font-size:.8rem;margin-bottom:8px">Wat zit erin...</p>
+    <div class="crate-reel-wrap" id="crateReelWrap">
+      <div class="crate-reel" id="crateReel">
+        ${reelItems.map((item,i)=>`<div class="reel-item${item.isWinner?' winner':''}" data-idx="${i}">${item.emoji}</div>`).join('')}
+      </div>
+      <div class="reel-center-line"></div>
+      <div class="reel-arrow-top"></div>
+      <div class="reel-arrow-bot"></div>
     </div>
-    <div class="btnrow" style="margin-top:16px">
-      ${equipBtn}
-      <button class="btn" onclick="showLoot()">Nog een kist!</button>
-      <button class="btn secondary" onclick="showMenu()">Menu</button>
+    <div id="reelResult" style="min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 0.4s">
+      <div style="font-size:2.4rem">${icon}</div>
+      <div style="font-weight:700;font-size:1rem;color:${rarityColors[itemRarity]||'#fff'};margin-top:4px">${rarityNames[itemRarity]} — ${name}</div>
+    </div>
+    <div id="reelBtns" class="btnrow" style="margin-top:12px;opacity:0;transition:opacity 0.4s">
+      ${equipAction?`<button class="btn" onclick="${equipAction}">✨ Uitrusten</button>`:''}
+      <button class="btn secondary" onclick="showLoot()">🎁 Nog een kist!</button>
+      <button class="btn secondary" onclick="showMenu()">← Menu</button>
     </div>
   </div>`;
   overlay.style.display='flex';
+
+  // Run the reel animation
+  const reel=document.getElementById('crateReel');
+  const wrap=document.getElementById('crateReelWrap');
+  const itemW=72;
+  const wrapW=wrap.offsetWidth||440;
+  const targetOffset=WINNER_IDX*itemW-(wrapW/2-itemW/2);
+  const startOffset=Math.max(0,targetOffset-itemW*14);
+  reel.style.transform=`translateX(-${startOffset}px)`;
+  reel.style.transition='none';
+
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      reel.style.transition=`transform 3.2s cubic-bezier(0.25,0.1,0.05,1)`;
+      reel.style.transform=`translateX(-${targetOffset}px)`;
+    });
+  });
+
+  setTimeout(()=>{
+    document.getElementById('reelResult').style.opacity='1';
+    document.getElementById('reelBtns').style.opacity='1';
+    if(itemRarity==='legendary') showToast(`🌠 LEGENDARISCH! ${icon} ${name}`,'legendary-toast',6000);
+  },3400);
 }
 
 // ══ AUDIO ══
@@ -2844,6 +2896,83 @@ function copyScore(){
 }
 
 // ── MENU ──────────────────────────────────────────────────────────────────────
+
+let inventoryTab='bats';
+function showInventory(){
+  gameState='inventory';
+  renderInventoryScreen();
+}
+function renderInventoryScreen(){
+  overlay.innerHTML=`<div class="panel" style="max-width:580px">
+    <h1 style="font-size:1.4rem">🎒 Inventaris</h1>
+    <div class="tabs">
+      <button class="tab ${inventoryTab==='bats'?'active':''}" onclick="inventoryTab='bats';renderInventoryScreen()">🏓 Batjes</button>
+      <button class="tab ${inventoryTab==='maps'?'active':''}" onclick="inventoryTab='maps';renderInventoryScreen()">🗺️ Velden</button>
+      <button class="tab ${inventoryTab==='balls'?'active':''}" onclick="inventoryTab='balls';renderInventoryScreen()">⚽ Ballen</button>
+    </div>
+    <div class="shop-grid" id="invGrid"></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+  </div>`;
+  overlay.style.display='flex';
+
+  const grid=document.getElementById('invGrid');
+  const rarityOrder={common:0,rare:1,epic:2,legendary:3};
+
+  let items, owned, curActive;
+  if(inventoryTab==='bats'){
+    items=BATS.filter(b=>S.ownedBats.includes(b.id)).sort((a,b)=>rarityOrder[a.rarity]-rarityOrder[b.rarity]);
+    curActive=S.activeBat;
+  } else if(inventoryTab==='maps'){
+    items=MAPS.filter(m=>S.ownedMaps.includes(m.id)).sort((a,b)=>rarityOrder[a.rarity]-rarityOrder[b.rarity]);
+    curActive=S.activeMap;
+  } else {
+    items=BALL_SKINS.filter(b=>S.ownedBallSkins.includes(b.id)).sort((a,b)=>rarityOrder[a.rarity]-rarityOrder[b.rarity]);
+    curActive=S.activeBallSkin;
+  }
+
+  const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
+  const sourceLabels={shop:'Winkel',loot:'Kist',bp:'Battle Pass'};
+
+  items.forEach(item=>{
+    const isActive=item.id===curActive;
+    const div=document.createElement('div');
+    div.className='shop-item rarity-'+item.rarity+(isActive?' active-item':'');
+    const prevId='inv_pv_'+item.id;
+    div.innerHTML=`
+      ${isActive?'<div class="badge-row"><span class="badge active">Actief</span></div>':''}
+      <canvas id="${prevId}" width="74" height="64" style="border-radius:5px"></canvas>
+      <div class="rarity-label">${rarityNames[item.rarity]}</div>
+      <div class="item-name">${item.emoji} ${item.name}</div>
+      <div style="font-size:.68rem;color:#556;margin-bottom:6px">${sourceLabels[item.source]||''}</div>
+      <div>
+        ${isActive
+          ? `<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" disabled>✓ In gebruik</button>`
+          : `<button class="btn" style="padding:5px 12px;font-size:.75rem" onclick="equipInventoryItem('${inventoryTab}','${item.id}')">Uitrusten</button>`
+        }
+      </div>`;
+    grid.appendChild(div);
+    setTimeout(()=>{
+      const pc=document.getElementById(prevId);if(!pc)return;
+      const px=pc.getContext('2d');
+      if(inventoryTab==='maps'){px.save();px.scale(74/W,64/H);item.drawTable(px,W,H);px.restore();}
+      else if(inventoryTab==='balls'){px.fillStyle='#0a1a2a';px.fillRect(0,0,74,64);const fb={x:37,y:32,r:13,rot:0.5,flash:0,spawnT:1,trail:[]};item.draw(px,fb);}
+      else{px.fillStyle='#1a2a1a';px.fillRect(0,0,74,64);item.draw(px,37,28,0,0);}
+    },10);
+  });
+
+  if(!items.length){
+    grid.innerHTML=`<div style="grid-column:span 3;color:#445;text-align:center;padding:20px">Nog geen items in dit tabblad.<br>Koop items in de winkel of open kisten!</div>`;
+  }
+}
+
+function equipInventoryItem(tab, id){
+  if(tab==='bats') S.activeBat=id;
+  else if(tab==='maps') S.activeMap=id;
+  else S.activeBallSkin=id;
+  saveState();
+  renderInventoryScreen();
+}
+
 function switchPanel(fn){
   const panel=overlay.querySelector('.panel');
   if(panel){panel.classList.add('fade-out');setTimeout(()=>{panel.classList.remove('fade-out');fn();},120);}
@@ -2865,15 +2994,16 @@ function showMenu(){
     </div>
     <button class="btn btn-play" onclick="startGame()">▶ SPELEN</button>
     <div class="menu-grid">
+      <button class="btn secondary" onclick="switchPanel(showInventory)">🎒 Inventaris</button>
       <button class="btn secondary" onclick="switchPanel(showShop)">🛒 Winkel</button>
       <button class="btn purple" onclick="switchPanel(showBP)">⚡ Smash Seizoen</button>
+      <button class="btn secondary" onclick="switchPanel(showChallenges)">📅 Dagelijks</button>
       <button class="btn secondary" onclick="switchPanel(showAchievements)">🏆 Prestaties</button>
       <button class="btn secondary" onclick="switchPanel(showLoot)">📦 Kisten</button>
-      <button class="btn secondary" onclick="switchPanel(showChallenges)">📅 Dagelijks</button>
-      <button class="btn secondary" onclick="switchPanel(showStats)">📊 Statistieken</button>
       <button class="btn secondary" onclick="switchPanel(showTopScores)">🏅 Top Scores</button>
-      <button class="btn secondary" onclick="switchPanel(showSettings)">⚙️ Instellingen</button>
+      <button class="btn secondary" onclick="switchPanel(showStats)">📊 Statistieken</button>
       <button class="btn secondary" onclick="switchPanel(showProfile)">👤 Profiel</button>
+      <button class="btn secondary" onclick="switchPanel(showSettings)">⚙️ Instellingen</button>
       ${S.level>=20?`<button class="btn gold" onclick="switchPanel(showPrestige)" style="grid-column:span 2">⚡ Prestige (Lv.MAX)</button>`:''}
     </div>
   </div>`;
@@ -3232,7 +3362,7 @@ function showSettings(){
       </select>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v10.0</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v10.1</div>
   </div>`;
   overlay.style.display='flex';
 }
