@@ -190,7 +190,7 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 .crate-reel-wrap{position:relative;width:100%;max-width:440px;height:90px;overflow:hidden;border:2px solid rgba(0,255,153,0.3);border-radius:10px;background:rgba(0,0,0,0.4);margin:16px auto;}
 .crate-reel{display:flex;align-items:center;height:90px;will-change:transform;}
 .reel-item{flex-shrink:0;width:72px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,0.06);font-size:1.8rem;}
-.reel-item.winner{background:rgba(0,255,153,0.1);}
+.reel-item.winner{}
 .reel-center-line{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(0,255,153,0.8);transform:translateX(-50%);box-shadow:0 0 8px rgba(0,255,153,0.6);pointer-events:none;z-index:2;}
 .reel-arrow-top{position:absolute;left:50%;top:-1px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid rgba(0,255,153,0.9);z-index:3;}
 .reel-arrow-bot{position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:10px solid rgba(0,255,153,0.9);z-index:3;}
@@ -1898,7 +1898,7 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
   const WINNER_IDX=43;
   const reelItems=[];
   for(let i=0;i<50;i++){
-    if(i===WINNER_IDX) reelItems.push({emoji:icon,isWinner:true});
+    if(i===WINNER_IDX) reelItems.push({emoji:icon,isWinner:false});
     else reelItems.push({emoji:fillerEmojis[Math.floor(Math.random()*fillerEmojis.length)],isWinner:false});
   }
 
@@ -3353,7 +3353,7 @@ function showSettings(){
       </select>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v10.2</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v10.2.1</div>
   </div>`;
   overlay.style.display='flex';
 }
