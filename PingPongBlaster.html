@@ -1229,6 +1229,36 @@ function getTrailColor(id){
   const c={classic:'#ff6060',neon:'#cc44ff',goud:'#ffd700',vuur:'#ff8800',diamant:'#88ccff',rainbow:'#ff88ff',shadow:'rgba(120,0,255,0.9)',pingmaster:'#ffd700',ocean:'#44ccff',cyber:'#00ffcc',lava:'#ff4400',bliksem:'#ffee00',ijs:'#aaeeff',schaduwkloon:'#8800ff',glas:'#aaddff',kosmisch:'#8844ff',draak:'#44ff22',giftig:'#00ff44',ridder:'#aaaacc',koninklijk:'#ffcc00'};
   return c[id]||'#00ff99';
 }
+// Per-bat trail style — upgraded bats get a prominent, glowing, unique trail
+function getTrailStyle(id){
+  const upgraded=!!(S&&S.trailUpgrades&&S.trailUpgrades[id]);
+  const base={
+    classic:{c:'#ff6060',w:1.0,g:1.0},
+    neon:{c:'#cc44ff',w:1.1,g:1.5},
+    goud:{c:'#ffd700',w:1.15,g:1.4},
+    vuur:{c:'#ff7722',w:1.35,g:1.6},
+    diamant:{c:'#aaddff',w:1.0,g:1.3},
+    ocean:{c:'#33bbff',w:1.25,g:1.2},
+    cyber:{c:'#00ffcc',w:1.0,g:1.7},
+    lava:{c:'#ff5511',w:1.45,g:1.5},
+    bliksem:{c:'#ffee22',w:0.9,g:1.8},
+    ijs:{c:'#cceeff',w:1.15,g:1.1},
+    glas:{c:'#bbe0ff',w:1.0,g:1.2},
+    kosmisch:{c:'#9955ff',w:1.25,g:1.6},
+    draak:{c:'#55ff33',w:1.35,g:1.5},
+    giftig:{c:'#22ff66',w:1.15,g:1.6},
+    ridder:{c:'#bbbbdd',w:1.05,g:1.0},
+    koninklijk:{c:'#ffcc22',w:1.25,g:1.5},
+    rainbow:{rainbow:true,w:1.35,g:1.7},
+    regenboogtrail:{rainbow:true,w:1.35,g:1.7},
+    shadow:{c:'#9933ff',w:1.25,g:1.4},
+    schaduwkloon:{c:'#9933ff',w:1.25,g:1.4},
+    pingmaster:{c:'#ffd700',w:1.4,g:1.8}
+  };
+  const s=base[id]||{c:'#00ff99',w:1.0,g:1.0};
+  return {upgraded, rainbow:!!s.rainbow, w:s.w, g:s.g,
+          color:(S&&S.trailUpgrades&&S.trailUpgrades[id])||s.c};
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  BALL SKINS
@@ -2744,7 +2774,7 @@ function loop(){
   wrongFlash=Math.max(0,wrongFlash-.05);goodFlash=Math.max(0,goodFlash-.08);
   racketPulse=Math.max(0,racketPulse-.08);
   if(shake>0){shakeX=(Math.random()-.5)*shake;shakeY=(Math.random()-.5)*shake;shake*=.78;}else{shakeX=0;shakeY=0;}
-  batTrail.push({x:racket.x,y:racket.y});if(batTrail.length>14)batTrail.shift();
+  {const _ts=getTrailStyle(getBat().id);batTrail.push({x:racket.x,y:racket.y});if(batTrail.length>((_ts.upgraded||_ts.rainbow)?20:12))batTrail.shift();}
   draw();raf=requestAnimationFrame(loop);
 }
 
@@ -2764,14 +2794,31 @@ function draw(){
   if(wrongFlash>0){ctx.globalAlpha=wrongFlash*.35;ctx.fillStyle=map.flashBad||'#e74c3c';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
   drawNet(map);drawParticles();balls.forEach(drawBall);drawDirectionIndicator();drawRebound();drawPowerupIndicator();
   ctx.save();
-  for(let i=0;i<batTrail.length-1;i++){
+  const tStyle=getTrailStyle(getBat().id);
+  const tLen=batTrail.length;
+  for(let i=0;i<tLen-1;i++){
     const t=batTrail[i];
-    const alpha=(i/batTrail.length)*0.3;
-    const radius=10*(i/batTrail.length);
-    ctx.globalAlpha=alpha;
-    ctx.fillStyle=getTrailColor(getBat().id);
-    ctx.beginPath();ctx.ellipse(t.x,t.y,radius,radius*0.75,0,0,Math.PI*2);ctx.fill();
+    const prog=i/tLen;
+    let col;
+    if(tStyle.rainbow)col=`hsl(${(Date.now()/12+i*24)%360},100%,62%)`;
+    else col=tStyle.color;
+    if(tStyle.upgraded||tStyle.rainbow){
+      // Exclusive upgraded trail — bright, glowing, long, overrides the subtle default
+      ctx.globalAlpha=prog*0.65;
+      const radius=18*prog*tStyle.w;
+      ctx.fillStyle=col;
+      ctx.shadowColor=col;ctx.shadowBlur=18*prog*tStyle.g;
+      ctx.beginPath();ctx.ellipse(t.x,t.y,radius,radius*0.7,0,0,Math.PI*2);ctx.fill();
+    } else {
+      // Subtle default trail (no upgrade purchased)
+      ctx.globalAlpha=prog*0.16;
+      const radius=7*prog;
+      ctx.shadowBlur=0;
+      ctx.fillStyle=col;
+      ctx.beginPath();ctx.ellipse(t.x,t.y,radius,radius*0.75,0,0,Math.PI*2);ctx.fill();
+    }
   }
+  ctx.shadowBlur=0;
   ctx.restore();
   getBat().draw(ctx,racket.x,racket.y,racketPulse,racketSpin);
   if(combo>=3){
@@ -3527,7 +3574,7 @@ function buyFeaturedItem(){
 }
 function upgradeTrail(batId){
   if(S.coins<75){showToast('\u274C Niet genoeg muntjes!');return;}
-  const trailColors={classic:'#ffffff',neon:'#00ffff',goud:'#ffdd00',vuur:'#ff4400',diamant:'#88eeff',ocean:'#0066ff',cyber:'#ff00ff',lava:'#ff6600',bliksem:'#ffff00',ijs:'#aaeeff',glas:'#ccddff',kosmisch:'#aa66ff',draak:'#66ff00',giftig:'#00ff66',ridder:'#bbbbdd',koninklijk:'#ffcc00'};
+  const trailColors={classic:'#ff7070',neon:'#dd55ff',goud:'#ffdd33',vuur:'#ff8833',diamant:'#bbe6ff',ocean:'#44bbff',cyber:'#00ffdd',lava:'#ff6622',bliksem:'#ffff44',ijs:'#cceeff',glas:'#cce6ff',kosmisch:'#aa66ff',draak:'#66ff44',giftig:'#33ff77',ridder:'#ccccee',koninklijk:'#ffd633',rainbow:'#ff66ff',shadow:'#aa44ff',schaduwkloon:'#aa44ff',pingmaster:'#ffe055'};
   S.coins-=75;S.trailUpgrades[batId]=trailColors[batId]||'#ffffff';
   saveState();showToast('\u2728 Trail ge\u00FCpgraded!');renderShop();
 }
@@ -3761,7 +3808,7 @@ function showSettings(){
         onclick="S.ballTrail=!S.ballTrail;saveState();document.getElementById('ballTrailBtn').textContent=S.ballTrail?'Aan':'Uit';document.getElementById('ballTrailBtn').className='btn '+(S.ballTrail?'':'secondary')">${S.ballTrail!==false?'Aan':'Uit'}</button>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v12.0</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v12.1</div>
   </div>`;
   overlay.style.display='flex';
 }
