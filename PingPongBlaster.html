@@ -940,7 +940,7 @@ const MAPS=[
     }
   },
   // V13.0 new maps
-  {id:'neoncity',name:'Neon City',emoji:'🌆',price:180,rarity:'zeldzaam',source:'shop',
+  {id:'neoncity',name:'Neon City',emoji:'🌆',price:150,rarity:'rare',source:'shop',
     drawTable(ctx,W,H){
       ctx.fillStyle='#080818';ctx.fillRect(0,0,W,H);
       ctx.save();ctx.lineWidth=0.5;
@@ -949,7 +949,7 @@ const MAPS=[
       ctx.restore();
       ctx.strokeStyle='#ff00cc';ctx.lineWidth=3;ctx.strokeRect(14,14,W-28,H-28);
     },netColor:'#00ffff',flashGood:'#ff00cc',flashBad:'#ff3300'},
-  {id:'jungle_v13',name:'Jungle',emoji:'🌿',price:120,rarity:'gewoon',source:'shop',
+  {id:'jungle_v13',name:'Jungle',emoji:'🌿',price:40,rarity:'common',source:'shop',
     drawTable(ctx,W,H){
       ctx.fillStyle='#0a1f0a';ctx.fillRect(0,0,W,H);
       ctx.save();ctx.globalAlpha=.18;ctx.fillStyle='#1a4a0a';
@@ -958,7 +958,7 @@ const MAPS=[
       ctx.restore();
       ctx.strokeStyle='#4a2a0a';ctx.lineWidth=3;ctx.strokeRect(14,14,W-28,H-28);
     },netColor:'#228822',flashGood:'#44ff44',flashBad:'#ff4400'},
-  {id:'spacestation',name:'Ruimtestation',emoji:'🛸',price:200,rarity:'episch',source:'shop',
+  {id:'spacestation',name:'Ruimtestation',emoji:'🛸',price:200,rarity:'epic',source:'shop',
     drawTable(ctx,W,H){
       ctx.fillStyle='#020208';ctx.fillRect(0,0,W,H);
       const stars=[[45,32],[98,87],[155,23],[203,145],[267,67],[312,198],[378,34],[421,156],[489,89],[534,221],[578,45],[634,178],[688,93],[732,267],[61,189],[117,312],[174,245],[228,378],[284,167],[339,289],[394,412],[448,134],[502,345],[556,178],[611,423],[665,56],[719,345],[773,189],[88,456],[326,78]];
@@ -1607,7 +1607,7 @@ const BALL_SKINS=[
     }
   },
   // V12.0 new ball skins
-  {id:'tornado',name:'Tornado',emoji:'🌪️',price:350,rarity:'rare',source:'shop',trailColor:'#88aaff',
+  {id:'tornado',name:'Tornado',emoji:'🌪️',price:100,rarity:'rare',source:'shop',trailColor:'#88aaff',
     draw(ctx,b){
       ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);ctx.rotate(b.rot);
       if(b.flash>0){ctx.shadowColor='#88aaff';ctx.shadowBlur=22*b.flash;}
@@ -1628,7 +1628,7 @@ const BALL_SKINS=[
         ctx.stroke();
       }
       ctx.globalAlpha=1;ctx.restore();}},
-  {id:'diamond_cut',name:'Diamant',emoji:'💎',price:500,rarity:'epic',source:'shop',trailColor:'#aaeeff',
+  {id:'diamond_cut',name:'Diamant',emoji:'💎',price:200,rarity:'epic',source:'shop',trailColor:'#aaeeff',
     draw(ctx,b){
       ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);ctx.rotate(b.rot);
       if(b.flash>0){ctx.shadowColor='#aaeeff';ctx.shadowBlur=22*b.flash;}
@@ -1650,7 +1650,7 @@ const BALL_SKINS=[
         ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*ri,Math.sin(a)*ri);
         ctx.lineTo(Math.cos(a+Math.PI/4)*ri*.6,Math.sin(a+Math.PI/4)*ri*.6);ctx.closePath();ctx.fill();}
       ctx.globalAlpha=1;ctx.restore();}},
-  {id:'vortex',name:'Vortex',emoji:'🌀',price:200,rarity:'common',source:'shop',trailColor:'#220066',
+  {id:'vortex',name:'Vortex',emoji:'🌀',price:50,rarity:'common',source:'shop',trailColor:'#220066',
     draw(ctx,b){
       ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);ctx.rotate(b.rot);
       if(b.flash>0){ctx.shadowColor='#6600cc';ctx.shadowBlur=22*b.flash;}
