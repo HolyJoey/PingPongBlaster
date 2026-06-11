@@ -1,5 +1,5 @@
 {
-  "version": "13.0",
+  "version": "13.1",
   "url": "https://github.com/HolyJoey/PingPongBlaster/blob/main/PingPongBlaster.html",
   "notes": "Bump this 'version' on each release. The game compares it against its built-in GAME_VERSION and shows an in-menu update banner when this is newer."
 }

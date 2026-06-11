@@ -221,11 +221,14 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 // ══════════════════════════════════════════════════════════════════════════════
 //  VERSION & UPDATE CHECK
 // ══════════════════════════════════════════════════════════════════════════════
-const GAME_VERSION='13.0';
-const UPDATE_VERSION_URL='https://raw.githubusercontent.com/HolyJoey/PingPongBlaster/main/version.json';
+const GAME_VERSION='13.1';
 const UPDATE_FILE_URL='https://github.com/HolyJoey/PingPongBlaster/blob/main/PingPongBlaster.html';
-let _updateChecked=false,_updateInfo=null;
-// Compare two dotted version strings (e.g. "12.1" vs "12.1.1"). Returns 1 if a>b, -1 if a<b, 0 if equal.
+const UPDATE_URLS=[
+  'https://raw.githubusercontent.com/HolyJoey/PingPongBlaster/main/version.json',
+  'https://cdn.jsdelivr.net/gh/HolyJoey/PingPongBlaster@main/version.json',
+  'https://api.github.com/repos/HolyJoey/PingPongBlaster/contents/version.json',
+];
+let _updateInfo=null,_updateDone=false;
 function cmpVersion(a,b){
   const pa=String(a).split('.').map(n=>parseInt(n,10)||0);
   const pb=String(b).split('.').map(n=>parseInt(n,10)||0);
@@ -233,25 +236,36 @@ function cmpVersion(a,b){
   for(let i=0;i<len;i++){const x=pa[i]||0,y=pb[i]||0;if(x>y)return 1;if(x<y)return -1;}
   return 0;
 }
-// Fetch the version published in main and, if newer, surface a banner in the menu.
-function checkForUpdate(){
-  if(_updateChecked){renderUpdateBanner();return;}
-  _updateChecked=true;
-  fetch(UPDATE_VERSION_URL,{cache:'no-store'})
-    .then(r=>r.ok?r.json():null)
-    .then(data=>{
-      if(data&&data.version&&cmpVersion(data.version,GAME_VERSION)>0){
-        _updateInfo={version:data.version,url:(data.url||UPDATE_FILE_URL)};
-        renderUpdateBanner();
+function _parseVersionResp(data,isAPI){
+  if(isAPI&&data.content){try{return JSON.parse(atob(data.content.replace(/\n/g,'')));}catch(e){return null;}}
+  return data;
+}
+async function checkForUpdate(){
+  if(_updateDone){renderUpdateBanner();return;}
+  for(const url of UPDATE_URLS){
+    try{
+      const isAPI=url.includes('api.github.com');
+      const r=await fetch(url,{cache:'no-store',mode:'cors'});
+      if(!r.ok)continue;
+      const json=await r.json();
+      const vdata=_parseVersionResp(json,isAPI);
+      if(vdata&&vdata.version){
+        _updateDone=true;
+        if(cmpVersion(vdata.version,GAME_VERSION)>0){
+          _updateInfo={version:vdata.version,url:vdata.url||UPDATE_FILE_URL};
+          renderUpdateBanner();
+        }
+        return;
       }
-    })
-    .catch(()=>{/* offline or file:// — silently ignore, show nothing */});
+    }catch(e){/* try next */}
+  }
+  _updateDone=true;
 }
 function renderUpdateBanner(){
   const el=document.getElementById('updateBanner');
   if(!el||!_updateInfo)return;
   el.innerHTML=`<a href="${_updateInfo.url}" target="_blank" rel="noopener" class="update-banner">
-    🚀 Nieuwe versie beschikbaar — v${_updateInfo.version}! <span style="text-decoration:underline">Download hier</span></a>`;
+    \u{1F680} Nieuwe versie beschikbaar \u2014 v${_updateInfo.version}! <span style="text-decoration:underline">Download hier</span></a>`;
 }
 // ══════════════════════════════════════════════════════════════════════════════
 //  CANVAS
@@ -4025,7 +4039,7 @@ function showSettings(){
         onclick="S.ballTrail=!S.ballTrail;saveState();document.getElementById('ballTrailBtn').textContent=S.ballTrail?'Aan':'Uit';document.getElementById('ballTrailBtn').className='btn '+(S.ballTrail?'':'secondary')">${S.ballTrail!==false?'Aan':'Uit'}</button>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v13.0</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v13.1</div>
   </div>`;
   overlay.style.display='flex';
 }
