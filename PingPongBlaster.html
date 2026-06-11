@@ -221,7 +221,7 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 // ══════════════════════════════════════════════════════════════════════════════
 //  VERSION & UPDATE CHECK
 // ══════════════════════════════════════════════════════════════════════════════
-const GAME_VERSION='12.1';
+const GAME_VERSION='13.0';
 const UPDATE_VERSION_URL='https://raw.githubusercontent.com/HolyJoey/PingPongBlaster/main/version.json';
 const UPDATE_FILE_URL='https://github.com/HolyJoey/PingPongBlaster/blob/main/PingPongBlaster.html';
 let _updateChecked=false,_updateInfo=null;
@@ -938,7 +938,35 @@ const MAPS=[
       ctx.strokeStyle='rgba(150,50,255,0.25)';ctx.lineWidth=2;
       ctx.beginPath();ctx.ellipse(W/2,H/2,W*0.42,H*0.35,0,0,Math.PI*2);ctx.stroke();
     }
-  }
+  },
+  // V13.0 new maps
+  {id:'neoncity',name:'Neon City',emoji:'🌆',price:180,rarity:'zeldzaam',source:'shop',
+    drawTable(ctx,W,H){
+      ctx.fillStyle='#080818';ctx.fillRect(0,0,W,H);
+      ctx.save();ctx.lineWidth=0.5;
+      for(let i=1;i<=10;i++){ctx.strokeStyle='rgba(255,0,200,0.15)';ctx.beginPath();ctx.moveTo(i*W/11,0);ctx.lineTo(i*W/11,H);ctx.stroke();}
+      for(let i=1;i<=8;i++){ctx.strokeStyle='rgba(255,0,200,0.15)';ctx.beginPath();ctx.moveTo(0,i*H/9);ctx.lineTo(W,i*H/9);ctx.stroke();}
+      ctx.restore();
+      ctx.strokeStyle='#ff00cc';ctx.lineWidth=3;ctx.strokeRect(14,14,W-28,H-28);
+    },netColor:'#00ffff',flashGood:'#ff00cc',flashBad:'#ff3300'},
+  {id:'jungle_v13',name:'Jungle',emoji:'🌿',price:120,rarity:'gewoon',source:'shop',
+    drawTable(ctx,W,H){
+      ctx.fillStyle='#0a1f0a';ctx.fillRect(0,0,W,H);
+      ctx.save();ctx.globalAlpha=.18;ctx.fillStyle='#1a4a0a';
+      const leaves=[[60,80,30,14],[150,200,25,12],[220,100,35,16],[300,300,28,13],[400,150,32,15],[500,250,26,12],[600,100,34,16],[680,350,27,13],[120,400,31,14],[350,450,29,13],[550,400,33,15],[750,300,24,11],[50,500,28,13],[700,480,30,14]];
+      leaves.forEach(([lx,ly,rx,ry])=>{ctx.beginPath();ctx.ellipse(lx,ly,rx,ry,0.3,0,Math.PI*2);ctx.fill();});
+      ctx.restore();
+      ctx.strokeStyle='#4a2a0a';ctx.lineWidth=3;ctx.strokeRect(14,14,W-28,H-28);
+    },netColor:'#228822',flashGood:'#44ff44',flashBad:'#ff4400'},
+  {id:'spacestation',name:'Ruimtestation',emoji:'🛸',price:200,rarity:'episch',source:'shop',
+    drawTable(ctx,W,H){
+      ctx.fillStyle='#020208';ctx.fillRect(0,0,W,H);
+      const stars=[[45,32],[98,87],[155,23],[203,145],[267,67],[312,198],[378,34],[421,156],[489,89],[534,221],[578,45],[634,178],[688,93],[732,267],[61,189],[117,312],[174,245],[228,378],[284,167],[339,289],[394,412],[448,134],[502,345],[556,178],[611,423],[665,56],[719,345],[773,189],[88,456],[326,78]];
+      ctx.fillStyle='#ffffff';
+      stars.forEach(([sx,sy])=>{ctx.beginPath();ctx.arc(sx,sy,1,0,Math.PI*2);ctx.fill();});
+      ctx.shadowColor='#3366ff';ctx.shadowBlur=8;
+      ctx.strokeStyle='#3366ff';ctx.lineWidth=3;ctx.strokeRect(14,14,W-28,H-28);ctx.shadowBlur=0;
+    },netColor:'#66aaff',flashGood:'#3366ff',flashBad:'#ff3300'}
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1753,7 +1781,7 @@ function defaultState(){
     stats:{totalHits:0,gamesPlayed:0,totalCoins:0,bestScore:0,cratesOpened:0,legendaryFound:0,bestCombo:0,
       powerupsActivated:0,bombsAvoided:0,goldenBallsHit:0,dailyChallengesCompleted:0,multiballHit:0,newHighscoreSet:0,
       maxLevelReached:1,bestGameCoins:0,bestLoginStreak:0,
-      survivalBest:0,totalScore:0,wins:0,perfectHits:0},
+      survivalBest:0,totalScore:0,wins:0,perfectHits:0,bossDefeated:0,shieldsUsed:0},
     bpClaimedLvls:[],
     inventory:[],  // loot items in inventory
     sfxVol:0.5,musicVol:0.25,muted:false,
@@ -1776,6 +1804,9 @@ function defaultState(){
     todayGames:0,todayDate:'',todayBest:0,
     gameMode:'classic',
     ballTrail:true,
+    batXP:{},
+    calendarDay:1,
+    calendarDate:'',
   };
 }
 let S=loadState()||defaultState();
@@ -1827,6 +1858,11 @@ if(S.todayDate==null)S.todayDate='';
 if(S.todayBest==null)S.todayBest=0;
 if(S.gameMode==null)S.gameMode='classic';
 if(S.ballTrail==null)S.ballTrail=true;
+if(!S.batXP)S.batXP={};
+if(S.calendarDay==null)S.calendarDay=1;
+if(S.calendarDate==null)S.calendarDate='';
+if(S.stats.bossDefeated==null)S.stats.bossDefeated=0;
+if(S.stats.shieldsUsed==null)S.stats.shieldsUsed=0;
 function saveState(){localStorage.setItem('ppb_v3',JSON.stringify(S));}
 
 // helpers
@@ -2300,6 +2336,10 @@ function playPerfectHit(){
   });
 }
 function playPowerup(){[523,659,784].forEach((f,i)=>setTimeout(()=>{playTone(f,.18,'sine',.18);playTone(f*1.25,.12,'sine',.1);},i*80));}
+function playSlowMoTone(){[440,392,349,294].forEach((f,i)=>setTimeout(()=>playTone(f,.25,'sine',.15),i*100));}
+function playBossHit(){playTone(150,.15,'sawtooth',.2);playTone(200,.12,'square',.15);}
+function playShieldBreak(){[440,330,220].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'triangle',.18),i*60));}
+function playScoreMeterFanfare(){[523,659,784,1047,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.18),i*60));}
 function playHover(){
   if(!audioCtx||S.muted)return;
   const o=audioCtx.createOscillator(),g=audioCtx.createGain();
@@ -2311,10 +2351,22 @@ function playHover(){
   o.start();o.stop(audioCtx.currentTime+0.06);
 }
 
+function getBGMSpeedFactor(){
+  if(!balls||!balls.length)return 1.0;
+  const activeBalls=balls.filter(b=>!b.departing&&!b.remove);
+  if(!activeBalls.length)return 1.0;
+  const baseSpeed=2.2*getDiff().speedMult;
+  const avgSpeed=activeBalls.reduce((s,b)=>s+Math.hypot(b.vx,b.vy),0)/activeBalls.length;
+  const ratio=avgSpeed/(baseSpeed*1.5);
+  return Math.min(1.4,Math.max(1.0,1.0+(ratio-1)*0.4));
+}
+
+let bgmScheduleTimeout=null;
 function startBGM(){
   stopBGM();if(!audioCtx)return;
   const track=getBgmTrack();
-  bgmInterval=setInterval(()=>{
+  function scheduleBGMNote(){
+    if(gameState!=='playing')return;
     if(!audioCtx)return;
     const freq=track.notes[bgmStep%track.notes.length];
     try{
@@ -2326,9 +2378,13 @@ function startBGM(){
       osc.start(now);osc.stop(now+.2);
     }catch(e){}
     bgmStep++;
-  },track.tempo);
+    const speedFactor=getBGMSpeedFactor();
+    const delay=Math.round(track.tempo/speedFactor);
+    bgmScheduleTimeout=setTimeout(scheduleBGMNote,delay);
+  }
+  bgmScheduleTimeout=setTimeout(scheduleBGMNote,track.tempo);
 }
-function stopBGM(){if(bgmInterval){clearInterval(bgmInterval);bgmInterval=null;}}
+function stopBGM(){if(bgmInterval){clearInterval(bgmInterval);bgmInterval=null;}if(bgmScheduleTimeout){clearTimeout(bgmScheduleTimeout);bgmScheduleTimeout=null;}}
 
 function toggleMute(){
   S.muted=!S.muted;
@@ -2354,6 +2410,14 @@ let lastDirIdx=-1,dirStreak=0,effectBag=[];
 let combo=0,comboMult=1,peakCombo=0,batTrail=[];
 // Power-ups
 let activePowerup=null,powerupTimer=0,shieldActive=false,doublerActive=false,slowmoActive=false,magnetActive=false,reboundActive=false,reboundTimer=0;
+// Feature 1: Slow-mo power-up vars
+let slowMoActive=false,slowMoTimer=0;
+// Feature 2: Boss ball vars
+let bossActive=false,bossHitsLeft=0;
+// Feature 3: Combo shield
+let comboShieldActive=false;
+// Feature 9: Score multiplier meter
+let scoreMeter=0.0,scoreMeterBonus=false,scoreMeterBonusTimer=0;
 // Survival mode
 let survivalDistance=0;
 // Daily challenge per-game stats
@@ -2422,8 +2486,13 @@ function pickDir(){
   if(idx===lastDirIdx)dirStreak++;else{lastDirIdx=idx;dirStreak=1;}return DIRS[idx];
 }
 
-const POWERUP_TYPES=['slowmo','shield','magnet','doubler','rebound'];
+const POWERUP_TYPES=['slowmo','shield','magnet','doubler','rebound','slow_mo'];
 function spawnBall(){
+  // Feature 2: Boss ball spawn at every 25 points
+  if(score>0&&score%25===0&&!bossActive&&balls.filter(b=>b.boss).length===0){
+    spawnBossball();
+    return;
+  }
   const side=Math.floor(Math.random()*4);let x,y;
   if(side===0){x=rndf(80,W-80);y=-15;}else if(side===1){x=rndf(80,W-80);y=H+15;}
   else if(side===2){x=-15;y=rndf(80,H-80);}else{x=W+15;y=rndf(80,H-80);}
@@ -2441,6 +2510,18 @@ function spawnBall(){
   if(sizeRoll<0.15){b.r=8;b.vx*=1.3;b.vy*=1.3;b.small=true;}
   else if(sizeRoll<0.25){b.r=18;b.vx*=0.75;b.vy*=0.75;b.big=true;}
   balls.push(b);
+}
+
+function spawnBossball(){
+  bossActive=true;bossHitsLeft=3;
+  const x=W/2,y=-30;
+  const speed=1.5*getDiff().speedMult;
+  const ang=Math.PI/2;
+  const b={x,y,vx:0,vy:speed,r:22,rot:0,dir:pickDir(),
+    departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[],
+    bomb:false,golden:false,powerup:null,boss:true,bossHitsLeft:3};
+  balls.push(b);
+  showToast('⚔️ BOSS BAL! Raak 3 keer!','lvl-toast',3000);
 }
 
 function outSide(b){
@@ -2595,6 +2676,7 @@ function spawnFloatText(x,y,text,color='#00ff99'){
 function activatePowerup(type){
   activePowerup=type;powerupTimer=300;
   if(type==='slowmo'){slowmoActive=true;powerupTimer=600;}
+  else if(type==='slow_mo'){slowMoActive=true;slowMoTimer=240;powerupTimer=240;playSlowMoTone();}
   else if(type==='shield'){shieldActive=true;powerupTimer=600;}
   else if(type==='magnet'){magnetActive=true;powerupTimer=600;}
   else if(type==='doubler'){doublerActive=true;powerupTimer=600;}
@@ -2602,12 +2684,13 @@ function activatePowerup(type){
   powerupsUsed++;
   S.stats.powerupsActivated++;
   checkAchievement('powerupsActivated',S.stats.powerupsActivated);
-  const names={slowmo:'⏱️ Slow-mo!',shield:'🛡️ Schild!',magnet:'🧲 Magneet!',doubler:'💰 Verdubbeling!',rebound:'🔄 Rebound!'};
+  const names={slowmo:'⏱️ Slow-mo!',shield:'🛡️ Schild!',magnet:'🧲 Magneet!',doubler:'💰 Verdubbeling!',rebound:'🔄 Rebound!',slow_mo:'⏱ SLOW MOTION!'};
   showToast(names[type]||'Power-up!');
   playPowerup();
 }
 function deactivatePowerup(){
   slowmoActive=false;magnetActive=false;doublerActive=false;shieldActive=false;reboundActive=false;reboundTimer=0;activePowerup=null;powerupTimer=0;
+  slowMoActive=false;slowMoTimer=0;
 }
 
 function registerPoint(x,y,b){
@@ -2619,6 +2702,8 @@ function registerPoint(x,y,b){
   const prevMult=comboMult;
   if(combo>=20)comboMult=4;else if(combo>=10)comboMult=3;else if(combo>=5)comboMult=2;else comboMult=1;
   if(comboMult>prevMult){playComboMilestone();addPopup(x,y-44,'+COMBO x'+comboMult+'!','#ff9500');showToast('🔥 Combo x'+comboMult+'!');}
+  // Feature 3: Combo Shield at combo 10
+  if(combo>=10&&!comboShieldActive){comboShieldActive=true;showToast('🛡️ Combo Shield actief!','ach-toast',3000);}
   // Combo coin bonuses
   if(combo===15){const bc=3;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x15! +3 🪙');}
   else if(combo===25){const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x25! +5 🪙');}
@@ -2712,7 +2797,7 @@ function loop(){
   for(let i=0;i<balls.length;i++){
     const b=balls[i];
     if(!b.departing){
-      const speedMult=slowmoActive?0.5:1;
+      const speedMult=(slowmoActive||slowMoActive)?0.35:1;
       // Survival mode: increase speed continuously
       let survSpeedBoost=1;
       if(S.gameMode==='survival'){survSpeedBoost=1+score*0.008;if(survSpeedBoost>5)survSpeedBoost=5;}
@@ -2728,19 +2813,61 @@ function loop(){
       if(reboundTimer>0){reboundTimer--;if(reboundTimer===0)reboundActive=false;}
       const side=outSide(b);
       if(side){
-        if(b.bomb){
+        if(b.boss){
+          // Feature 2: Boss bounces off all walls
+          if(side==='top'&&b.vy<0){b.y=b.r+2;b.vy=Math.abs(b.vy);}
+          else if(side==='bottom'&&b.vy>0){b.y=H-b.r-2;b.vy=-Math.abs(b.vy);}
+          else if(side==='left'&&b.vx<0){b.x=b.r+2;b.vx=Math.abs(b.vx);}
+          else if(side==='right'&&b.vx>0){b.x=W-b.r-2;b.vx=-Math.abs(b.vx);}
+        } else if(b.bomb){
           // Bomb reaches any wall: disappear, give point, spawn new ball
           b.remove=true;
           registerPoint(b.x,b.y,b);
           spawnBall();
         } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
-        else{triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;}
+        else{
+          if(comboShieldActive){
+            // Feature 3: Combo shield absorbs miss
+            comboShieldActive=false;combo=0;comboMult=1;
+            S.stats.shieldsUsed=(S.stats.shieldsUsed||0)+1;
+            goodFlash=0.4;
+            playShieldBreak();
+            addPopup(b.x,b.y-28,'🛡️ Shield verbroken!','#44ff88');
+            showToast('🛡️ Shield verbroken! Combo gereset.');
+            b.remove=true;spawnBall();
+          } else {
+            triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;
+          }
+        }
       }
       else if(b.cooldown<=0){
         const batW=22+[0,2.2,4.4,6.6][S.batWidthTier||0];
         const dx=b.x-racket.x,dy=b.y-racket.y,dist=Math.hypot(dx,dy);
         if(dist<b.r+batW){
           if(b.bomb){triggerShake(8,6);triggerGameOver('💣 Je raakte de bom!');return;}
+          // Feature 2: Boss hit handling
+          if(b.boss){
+            b.bossHitsLeft--;b.flash=1;playBossHit();triggerShake(5,4);
+            const hue=b.bossHitsLeft>1?0:30;
+            addPopup(b.x,b.y-28,`💥 ${b.bossHitsLeft} HP OVER!`,'#ff4400');
+            if(b.bossHitsLeft<=0){
+              b.remove=true;bossActive=false;
+              const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;
+              addXP(15);
+              S.stats.bossDefeated=(S.stats.bossDefeated||0)+1;
+              addPopup(b.x,b.y-50,'+5🪙 BOSS!','#ffd700');
+              triggerHitEffect(b.x,b.y);
+              showToast('🏆 BOSS VERSLAGEN! +5🪙 +15 XP','lvl-toast',3000);
+              spawnBall();
+            } else {
+              const nx2=dx/dist,ny2=dy/dist;
+              const dot2=b.vx*nx2+b.vy*ny2;
+              b.vx-=2*dot2*nx2;
+              b.vy-=2*dot2*ny2;
+              b.cooldown=15;
+            }
+            continue;
+          }
           // Perfect center hit check
           const centerDist=dist/(b.r+batW);
           if(centerDist<0.15&&!b.bomb&&!b.golden){
@@ -2760,10 +2887,10 @@ function loop(){
               // Shield absorbs wrong hit
               shieldActive=false;activePowerup=null;powerupTimer=0;
               const dot2=b.vx*nx+b.vy*ny;b.vx-=2*dot2*nx;b.vy-=2*dot2*ny;b.cooldown=8;
-              combo=0;comboMult=1;triggerWrongEffect(b.x,b.y);
+              combo=0;comboMult=1;comboShieldActive=false;triggerWrongEffect(b.x,b.y);
               showToast('🛡️ Schild geabsorbeerd!');
             } else {
-              const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;playWrong();
+              const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;comboShieldActive=false;playWrong();
             }
           }
         }
@@ -3159,9 +3286,25 @@ function drawRebound(){
 }
 
 function drawPowerupIndicator(){
+  // Feature 1: Draw slow motion indicator
+  if(slowMoActive){
+    const alpha=0.7+0.3*Math.sin(Date.now()/200);
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.font='bold 13px Orbitron,Arial';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillStyle='#00aaff';ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.lineWidth=3;
+    ctx.strokeText('⏱ SLOW MOTION',W/2,32);ctx.fillText('⏱ SLOW MOTION',W/2,32);
+    ctx.restore();
+  }
+  // Feature 3: Draw combo shield indicator
+  if(comboShieldActive){
+    ctx.save();ctx.textAlign='right';ctx.textBaseline='bottom';
+    ctx.font='bold 18px serif';ctx.fillStyle='#44ff88';
+    ctx.shadowColor='#44ff88';ctx.shadowBlur=8;
+    ctx.fillText('🛡️',W-14,H-80);ctx.shadowBlur=0;ctx.restore();
+  }
   if(!activePowerup||powerupTimer<=0)return;
-  const puColors={slowmo:'#00ffff',shield:'#4488ff',magnet:'#ff8800',doubler:'#ffd700',rebound:'#00aaff'};
-  const puIcons={slowmo:'⏱️',shield:'🛡️',magnet:'🧲',doubler:'💰',rebound:'🔄'};
+  const puColors={slowmo:'#00ffff',shield:'#4488ff',magnet:'#ff8800',doubler:'#ffd700',rebound:'#00aaff',slow_mo:'#00aaff'};
+  const puIcons={slowmo:'⏱️',shield:'🛡️',magnet:'🧲',doubler:'💰',rebound:'🔄',slow_mo:'⏱'};
   const col=puColors[activePowerup]||'#ffffff';
   const icon=puIcons[activePowerup]||'?';
   const bx=12,by=H-70,bw=72,bh=56,br=8;
@@ -3848,7 +3991,7 @@ function showSettings(){
         onclick="S.ballTrail=!S.ballTrail;saveState();document.getElementById('ballTrailBtn').textContent=S.ballTrail?'Aan':'Uit';document.getElementById('ballTrailBtn').className='btn '+(S.ballTrail?'':'secondary')">${S.ballTrail!==false?'Aan':'Uit'}</button>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v12.1</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v13.0</div>
   </div>`;
   overlay.style.display='flex';
 }
