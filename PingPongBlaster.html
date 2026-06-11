@@ -1281,6 +1281,20 @@ const BATS=[
       ctx.save();ctx.globalAlpha=.35;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-7,-8,7,4,-.5,0,Math.PI*2);ctx.fill();ctx.restore();
       if(pulse>0){ctx.save();ctx.globalAlpha=pulse*.5;ctx.fillStyle='#ffcc44';ctx.beginPath();ctx.ellipse(0,0,22,20,0,0,Math.PI*2);ctx.fill();ctx.restore();}
       ctx.restore();}
+  },
+  {id:'phantom',name:'Phantom',emoji:'👻',price:220,rarity:'rare',source:'shop',
+  draw(ctx,x,y,pulse,spin){
+    const s=1+.25*pulse,wob=spin*pulse;ctx.save();ctx.translate(x,y);ctx.rotate(wob);ctx.scale(s,s);
+    ctx.save();ctx.globalAlpha=.15;ctx.fillStyle='#aaaacc';ctx.beginPath();ctx.ellipse(3,7,24,22,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    const hg=ctx.createLinearGradient(-6,18,6,40);hg.addColorStop(0,'#1a1a2e');hg.addColorStop(1,'#0d0d1a');
+    ctx.fillStyle=hg;rr(ctx,-5,16,10,22,4);ctx.fill();
+    const rg=ctx.createRadialGradient(-4,-5,2,0,0,22);rg.addColorStop(0,'#ccccee');rg.addColorStop(.5,'#8888bb');rg.addColorStop(1,'rgba(60,60,100,0.4)');
+    ctx.globalAlpha=0.65;ctx.fillStyle=rg;ctx.beginPath();ctx.ellipse(0,0,22,20,0,0,Math.PI*2);ctx.fill();
+    ctx.lineWidth=2;ctx.strokeStyle='rgba(180,180,220,0.5)';ctx.stroke();ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(200,200,255,0.7)';
+    [[-8,-8],[9,-5],[-3,7],[10,3]].forEach(([sx,sy])=>{ctx.beginPath();ctx.arc(sx,sy,1.4,0,Math.PI*2);ctx.fill();});
+    if(pulse>0){ctx.save();ctx.globalAlpha=pulse*.35;ctx.fillStyle='#aaaaff';ctx.beginPath();ctx.ellipse(0,0,22,20,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+    ctx.restore();}
   }
 ];
 
@@ -1673,7 +1687,20 @@ const BALL_SKINS=[
         }
         ctx.closePath();ctx.stroke();
       }
-      ctx.globalAlpha=1;ctx.restore();}}
+      ctx.globalAlpha=1;ctx.restore();}},
+{id:'meteor',name:'Meteor',emoji:'☄️',price:150,rarity:'rare',source:'shop',trailColor:'#ff6622',
+draw(ctx,b){
+  ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);ctx.rotate(b.rot);
+  if(b.flash>0){ctx.shadowColor='#ff4400';ctx.shadowBlur=24*b.flash;}
+  const g=ctx.createRadialGradient(-b.r*.3,-b.r*.3,0,0,0,b.r);
+  g.addColorStop(0,'#ff8800');g.addColorStop(.4,'#cc3300');g.addColorStop(1,'#1a0a00');
+  ctx.fillStyle=g;ctx.shadowColor='#ff4400';ctx.shadowBlur=14;
+  ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);ctx.fill();
+  // cracks
+  ctx.strokeStyle='rgba(255,200,0,0.6)';ctx.lineWidth=1.2;
+  [[0,-b.r*.7,b.r*.3,0],[0,-b.r*.5,-b.r*.3,b.r*.4],[b.r*.2,-b.r*.3,0,b.r*.6]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});
+  ctx.globalAlpha=1;ctx.restore();}}
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1998,6 +2025,11 @@ function addXP(amount){
     levelUpAnim={life:1.0,level:S.level};
     showToast(`⭐ <strong>Level ${S.level} bereikt!</strong><br><small>Smash Seizoen beloningen wachten op je!</small>`,'lvl-toast');
     checkBPRewards();
+  if([5,10,15,20].includes(S.level)){
+    S.inventory.push({type:'crate',id:'milestone_crate',name:'Mijlpaal Kist',rarity:'rare'});
+    showToast('🎁 <strong>Mijlpaal bereikt! Gratis kist ontvangen!</strong>','ach-toast',4000);
+    playAchievement();
+  }
   }
   updateXpUI();
   checkAchievement('level',S.level);
@@ -3379,7 +3411,9 @@ function triggerGameOver(reden){
   overlay.innerHTML=`<div class="panel" style="max-width:400px;text-align:center">
     <div style="font-size:1rem;color:#778;margin-bottom:4px">${isSurvival?'SURVIVAL MODE':'GAME OVER'}</div>
     <div style="font-family:'Orbitron',monospace;font-size:3.5rem;color:var(--accent);line-height:1">${score}</div>
-    ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">🏆 Nieuw persoonlijk record!</div>':''}
+    ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">🏆 Nieuw persoonlijk record!</div>':
+      (S.best>0&&!isSurvival?`<div style="color:#889;font-size:.82rem;margin:4px 0">📊 \${Math.round(score/S.best*100)}% van je record (best: \${S.best})</div>`:'')
+    }
     ${isSurvival&&newSurvivalRecord?'<div style="color:#ff8800;font-weight:700;margin:6px 0">🌪️ Survival Record!</div>':''}
     <div style="font-size:.8rem;color:#556;margin:4px 0">${reden}</div>
     <div style="font-size:.78rem;color:#667;margin:2px 0">Moeilijkheid: ${getDiff().emoji} ${getDiff().name}</div>
