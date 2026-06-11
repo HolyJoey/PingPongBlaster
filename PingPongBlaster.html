@@ -50,6 +50,9 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 .menu-streak{color:#ff8800;white-space:nowrap;font-weight:700;}
 @keyframes achFlash{0%{opacity:1}100%{opacity:0}}
 .btn-play{width:100%;padding:14px;font-size:1.1rem;letter-spacing:1.5px;margin-bottom:12px;border-radius:12px;}
+.update-banner{display:block;text-align:center;margin-bottom:12px;padding:10px 12px;border-radius:10px;font-size:.85rem;font-weight:700;color:#fff;text-decoration:none;background:linear-gradient(90deg,#1a8f5a,#13b36e);border:1px solid rgba(0,255,153,0.5);box-shadow:0 0 14px rgba(0,255,153,0.35);animation:updPulse 2s ease-in-out infinite;}
+.update-banner:hover{filter:brightness(1.15);}
+@keyframes updPulse{0%,100%{box-shadow:0 0 10px rgba(0,255,153,0.3);}50%{box-shadow:0 0 20px rgba(0,255,153,0.6);}}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .menu-grid .btn{padding:10px 8px;font-size:.78rem;border-radius:10px;letter-spacing:.3px;}
 
@@ -215,6 +218,41 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 <div id="overlay"></div>
 
 <script>
+// ══════════════════════════════════════════════════════════════════════════════
+//  VERSION & UPDATE CHECK
+// ══════════════════════════════════════════════════════════════════════════════
+const GAME_VERSION='12.1';
+const UPDATE_VERSION_URL='https://raw.githubusercontent.com/HolyJoey/PingPongBlaster/main/version.json';
+const UPDATE_FILE_URL='https://github.com/HolyJoey/PingPongBlaster/blob/main/PingPongBlaster.html';
+let _updateChecked=false,_updateInfo=null;
+// Compare two dotted version strings (e.g. "12.1" vs "12.1.1"). Returns 1 if a>b, -1 if a<b, 0 if equal.
+function cmpVersion(a,b){
+  const pa=String(a).split('.').map(n=>parseInt(n,10)||0);
+  const pb=String(b).split('.').map(n=>parseInt(n,10)||0);
+  const len=Math.max(pa.length,pb.length);
+  for(let i=0;i<len;i++){const x=pa[i]||0,y=pb[i]||0;if(x>y)return 1;if(x<y)return -1;}
+  return 0;
+}
+// Fetch the version published in main and, if newer, surface a banner in the menu.
+function checkForUpdate(){
+  if(_updateChecked){renderUpdateBanner();return;}
+  _updateChecked=true;
+  fetch(UPDATE_VERSION_URL,{cache:'no-store'})
+    .then(r=>r.ok?r.json():null)
+    .then(data=>{
+      if(data&&data.version&&cmpVersion(data.version,GAME_VERSION)>0){
+        _updateInfo={version:data.version,url:(data.url||UPDATE_FILE_URL)};
+        renderUpdateBanner();
+      }
+    })
+    .catch(()=>{/* offline or file:// — silently ignore, show nothing */});
+}
+function renderUpdateBanner(){
+  const el=document.getElementById('updateBanner');
+  if(!el||!_updateInfo)return;
+  el.innerHTML=`<a href="${_updateInfo.url}" target="_blank" rel="noopener" class="update-banner">
+    🚀 Nieuwe versie beschikbaar — v${_updateInfo.version}! <span style="text-decoration:underline">Download hier</span></a>`;
+}
 // ══════════════════════════════════════════════════════════════════════════════
 //  CANVAS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -3348,6 +3386,7 @@ function showMenu(){
       ${todayGamesTxt?`<span style="color:#aaddff;font-size:.75rem">${todayGamesTxt}</span>`:''}
       ${todayBestTxt?`<span style="color:#ffcc44;font-size:.75rem">${todayBestTxt}</span>`:''}
     </div>
+    <div id="updateBanner"></div>
     <button class="btn btn-play" onclick="S.gameMode='classic';startGame()">▶ SPELEN</button>
     <button class="btn secondary" onclick="S.gameMode='survival';startGame()" style="padding:7px 16px;font-size:.82rem;border-radius:20px;margin:4px auto 0;display:block;background:rgba(255,80,0,0.15);border-color:rgba(255,80,0,0.5);color:#ff8844">🌪️ SURVIVAL MODE</button>
     <button class="btn secondary" onclick="cycleDifficulty()" style="padding:5px 16px;font-size:.78rem;border-radius:20px;margin:6px auto 0;display:block" title="Klik om moeilijkheid te wisselen">${getDiff().emoji} ${getDiff().name}</button>
@@ -3369,6 +3408,7 @@ function showMenu(){
   overlay.style.display='flex';
   updateXpUI();
   initMenuBalls();startMenuLoop();
+  checkForUpdate();
 }
 function getLevelTitle(lvl){
   if(lvl>=30)return'🎆 Ping Pong God';if(lvl>=25)return'👑 Absolute Meester';
