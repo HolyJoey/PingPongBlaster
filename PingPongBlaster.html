@@ -202,6 +202,51 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 .reel-center-line{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(0,255,153,0.8);transform:translateX(-50%);box-shadow:0 0 8px rgba(0,255,153,0.6);pointer-events:none;z-index:2;}
 .reel-arrow-top{position:absolute;left:50%;top:-1px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid rgba(0,255,153,0.9);z-index:3;}
 .reel-arrow-bot{position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:10px solid rgba(0,255,153,0.9);z-index:3;}
+
+/* ══════════════════════════════════════════════════════════════
+   UI POLISH — subtle, additive refinements (no layout overhaul)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Atmospheric ambient glow behind the whole scene */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 75% 55% at 50% -5%,rgba(0,255,153,0.06),transparent 70%),
+             radial-gradient(ellipse 65% 50% at 50% 105%,rgba(0,140,255,0.05),transparent 70%);
+}
+
+/* Panel entrance — gentle rise + scale-in */
+@keyframes panelIn{from{opacity:0;transform:translateY(14px) scale(.985);}to{opacity:1;transform:none;}}
+.panel{animation:panelIn .28s cubic-bezier(.22,1,.36,1);}
+
+/* Buttons — glossy top sheen + tactile press feedback */
+.btn{position:relative;overflow:hidden;z-index:0;}
+.btn::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;z-index:-1;background:linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,0));pointer-events:none;}
+.btn.secondary::before{opacity:.4;}
+.btn:active:not(:disabled){transform:translateY(0) scale(.965);transition:transform .07s ease;}
+
+/* Keyboard focus accessibility */
+.btn:focus-visible,.tab:focus-visible,.diff-opt:focus-visible{outline:2px solid rgba(0,255,153,.7);outline-offset:2px;}
+
+/* Tabs — hover affordance */
+.tab:hover:not(.active){background:rgba(0,255,153,0.07);color:#a8e8c8;border-color:rgba(0,255,153,0.32);}
+
+/* Shop items — gentle lift on hover */
+.shop-item{transition:transform .18s,border-color .18s,background .18s,box-shadow .18s;}
+.shop-item:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35);}
+
+/* Crate hover — soft depth */
+.crate:hover:not(.locked){box-shadow:0 8px 24px rgba(0,0,0,.4);border-color:rgba(0,255,153,.4);}
+
+/* Toast — accent bar + smoother feel */
+.toast{border-left-width:3px;}
+
+/* Scrollbar hover */
+::-webkit-scrollbar-thumb:hover{background:rgba(0,255,153,0.45);}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion:reduce){
+  .panel{animation:none;}
+}
 </style>
 </head>
 <body>
