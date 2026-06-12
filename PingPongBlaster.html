@@ -1936,10 +1936,8 @@ const ACHIEVEMENTS=[
   {id:'level15',      name:'Level 15',          desc:'Bereik level 15',                    icon:'⚡', target:15,   stat:'level',        reward:200},
   {id:'level30',      name:'Level 30 — Ping Pong God',desc:'Bereik het maximale level 30', icon:'🎆', target:30,   stat:'level',        reward:500},
   {id:'boss_5',       name:'Boss Slayer',       desc:'Versla 5 boss ballen',               icon:'⚔️', target:5,    stat:'bossDefeated', reward:50},
-  {id:'shields_3',    name:'Beschermeling',     desc:'Gebruik 3 combo shields',            icon:'🛡️', target:3,    stat:'shieldsUsed',  reward:30},
   {id:'mystery_10',   name:'Mysterie Jager',    desc:'Raak 10 mystery ballen',             icon:'❓', target:10,   stat:'mysteryHit',   reward:40},
   {id:'frenzy_3',     name:'Frenzy Fanaat',     desc:'Activeer 3x een Frenzy',             icon:'🔥', target:3,    stat:'frenzyCount',  reward:35},
-  {id:'zen_10',       name:'Zen Meester',       desc:'Speel 10 Zen Mode potjes',           icon:'🧘', target:10,   stat:'zenGames',     reward:40},
   {id:'perfect_25',   name:'Precisie Koning',   desc:'25 perfecte treffers',               icon:'✨', target:25,   stat:'perfectHits',  reward:45},
 ];
 
@@ -2088,10 +2086,10 @@ const TITLES=[
   {id:'legende',name:'Levende Legende',unlock:'Bereik prestige 1',check:()=>S.prestige>=1},
   {id:'god',name:'Ping Pong God',unlock:'Bereik level 30',check:()=>S.level>=30},
 ];
-function getTitleName(id){const t=TITLES.find(t=>t.id===id);return t?t.name:'';}
+function getTitleName(id){const x=TITLES.find(ti=>ti.id===id);if(!x)return'';const s=t('ttl_'+id);return s===('ttl_'+id)?x.name:s;}
 function setActiveTitle(id){
-  const t=TITLES.find(t=>t.id===id);
-  if(!t||!t.check())return;
+  const x=TITLES.find(ti=>ti.id===id);
+  if(!x||!x.check())return;
   S.activeTitle=S.activeTitle===id?'':id;
   saveState();
   showProfile();
@@ -2131,7 +2129,7 @@ function addToPiggyBank(coins){
   S.piggyBank=Math.min(200,(S.piggyBank||0)+coins*0.05);
 }
 function breakPiggyBank(){
-  if(S.piggyBank<50){showToast('🐷 Spaarpot kan pas open vanaf 50 muntjes!');return;}
+  if(S.piggyBank<50){showToast(t('piggy_locked'));return;}
   const amt=Math.floor(S.piggyBank);
   S.coins+=amt;S.stats.totalCoins+=amt;S.piggyBank=0;
   coinUiEl.textContent=S.coins;
@@ -2187,11 +2185,11 @@ function addXP(amount){
     leveled=true;
     playLevelUp();
     levelUpAnim={life:1.0,level:S.level};
-    showToast(`⭐ <strong>Level ${S.level} bereikt!</strong><br><small>Smash Seizoen beloningen wachten op je!</small>`,'lvl-toast');
+    showToast(t('lvl_toast').replace('{n}',S.level),'lvl-toast');
     checkBPRewards();
   if([5,10,15,20].includes(S.level)){
     S.inventory.push({type:'crate',id:'milestone_crate',name:'Mijlpaal Kist',rarity:'rare'});
-    showToast('🎁 <strong>Mijlpaal bereikt! Gratis kist ontvangen!</strong>','ach-toast',4000);
+    showToast(t('milestone_toast'),'ach-toast',4000);
     playAchievement();
   }
   }
@@ -2313,7 +2311,7 @@ function getLootPool(rarity){
 
 function openCrate(rarityKey){
   const def=CRATE_DEFS[rarityKey];
-  if(S.coins<def.price){showToast('❌ Niet genoeg muntjes!');return;}
+  if(S.coins<def.price){showToast(t('not_enough_coins'));return;}
   S.coins-=def.price;coinUiEl.textContent=S.coins;
   S.stats.cratesOpened++;
   const rarity=rollLoot(def.pools);
@@ -2431,7 +2429,7 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
     </div>
     <div id="reelBtns" class="btnrow" style="margin-top:12px;opacity:0;transition:opacity 0.4s">
       ${equipAction?`<button class="btn" onclick="${equipAction}">✨ Uitrusten</button>`:''}
-      <button class="btn secondary" onclick="showLoot()">🎁 Nog een kist!</button>
+      <button class="btn secondary" onclick="showLoot()">${t('another_crate')}</button>
       <button class="btn secondary" onclick="showMenu()">← Menu</button>
     </div>
   </div>`;
@@ -2670,11 +2668,167 @@ const TRANSLATIONS={
   diff_moeilijk:{en:'Hard',             nl:'Moeilijk',        de:'Schwer',        fr:'Difficile',       es:'Dif\u00edcil',        zh:'\u56f0\u96be',      ru:'\u0421\u043b\u043e\u0436\u043d\u043e'},
   diff_extreem: {en:'Extreme',          nl:'Extreem',         de:'Extrem',        fr:'Extr\u00eame',         es:'Extremo',        zh:'\u6781\u9650',      ru:'\u042d\u043a\u0441\u0442\u0440\u0438\u043c'},
   bonus_lbl:    {en:'Bonus',            nl:'Bonus',           de:'Bonus',         fr:'Bonus',           es:'Bonus',          zh:'\u5956\u52b1',      ru:'\u0411\u043e\u043d\u0443\u0441'},
+  go_wrong_side:{en:'The ball went out the wrong side!',nl:'De bal ging er aan de verkeerde kant uit!',de:'Der Ball ging auf der falschen Seite raus!',fr:'La balle est sortie du mauvais côté !',es:'¡La pelota salió por el lado equivocado!',zh:'球从错误的一侧出去了！',ru:'Мяч вылетел не с той стороны!'},
+  go_bomb:{en:'💣 You hit the bomb!',nl:'💣 Je raakte de bom!',de:'💣 Du hast die Bombe getroffen!',fr:'💣 Tu as touché la bombe !',es:'💣 ¡Golpeaste la bomba!',zh:'💣 你击中了炸弹！',ru:'💣 Ты задел бомбу!'},
+  go_stopped:{en:'Game stopped.',nl:'Spel gestopt.',de:'Spiel beendet.',fr:'Partie arrêtée.',es:'Juego detenido.',zh:'游戏已停止。',ru:'Игра остановлена.'},
+  pct_of_best:{en:'📊 {p}% of your best ({b})',nl:'📊 {p}% van je record (beste: {b})',de:'📊 {p}% deines Rekords ({b})',fr:'📊 {p}% de ton record ({b})',es:'📊 {p}% de tu récord ({b})',zh:'📊 记录的{p}%（最佳：{b}）',ru:'📊 {p}% от рекорда ({b})'},
+  copy_score:{en:'📋 Copy score',nl:'📋 Score kopiëren',de:'📋 Punktzahl kopieren',fr:'📋 Copier le score',es:'📋 Copiar puntuación',zh:'📋 复制分数',ru:'📋 Скопировать счёт'},
+  copied:{en:'📋 Score copied!',nl:'📋 Score gekopieerd!',de:'📋 Punktzahl kopiert!',fr:'📋 Score copié !',es:'📋 ¡Puntuación copiada!',zh:'📋 已复制！',ru:'📋 Счёт скопирован!'},
+  copy_failed:{en:'❌ Copy failed',nl:'❌ Kopiëren mislukt',de:'❌ Kopieren fehlgeschlagen',fr:'❌ Échec de la copie',es:'❌ Error al copiar',zh:'❌ 复制失败',ru:'❌ Не удалось скопировать'},
+  share_text:{en:'🏓 I scored {s} in Ping Pong Blaster! Can you beat that? 🏓',nl:'🏓 Ik scoorde {s} in Ping Pong Blaster! Kan jij beter? 🏓',de:'🏓 Ich habe {s} in Ping Pong Blaster erzielt! Schaffst du mehr? 🏓',fr:'🏓 J’ai marqué {s} dans Ping Pong Blaster ! Tu peux faire mieux ? 🏓',es:'🏓 ¡Conseguí {s} en Ping Pong Blaster! ¿Puedes superarlo? 🏓',zh:'🏓 我在 Ping Pong Blaster 得了{s}分！你能超过吗？🏓',ru:'🏓 Я набрал {s} в Ping Pong Blaster! Сможешь лучше? 🏓'},
+  level_lbl:{en:'Level',nl:'Level',de:'Level',fr:'Niveau',es:'Nivel',zh:'等级',ru:'Уровень'},
+  prestige_lbl:{en:'Prestige',nl:'Prestige',de:'Prestige',fr:'Prestige',es:'Prestigio',zh:'声望',ru:'Престиж'},
+  best_score:{en:'Best Score',nl:'Beste Score',de:'Beste Punktzahl',fr:'Meilleur score',es:'Mejor puntuación',zh:'最高分',ru:'Лучший счёт'},
+  best_combo:{en:'Best Combo',nl:'Beste Combo',de:'Bestes Kombo',fr:'Meilleur combo',es:'Mejor combo',zh:'最佳连击',ru:'Лучшее комбо'},
+  total_hits:{en:'Total Hits',nl:'Totale Treffers',de:'Treffer gesamt',fr:'Frappes totales',es:'Golpes totales',zh:'总击球',ru:'Всего ударов'},
+  games_played:{en:'Games Played',nl:'Potjes Gespeeld',de:'Gespielte Spiele',fr:'Parties jouées',es:'Partidas jugadas',zh:'游戏场数',ru:'Сыграно игр'},
+  total_coins:{en:'Total Coins',nl:'Totale Muntjes',de:'Münzen gesamt',fr:'Pièces totales',es:'Monedas totales',zh:'总硬币',ru:'Всего монет'},
+  ach_count_lbl:{en:'Achievements',nl:'Prestaties',de:'Erfolge',fr:'Succès',es:'Logros',zh:'成就',ru:'Достижения'},
+  active_cosmetics:{en:'ACTIVE COSMETICS',nl:'ACTIEVE COSMETICS',de:'AKTIVE KOSMETIK',fr:'COSMÉTIQUES ACTIFS',es:'COSMÉTICOS ACTIVOS',zh:'当前装扮',ru:'АКТИВНАЯ КОСМЕТИКА'},
+  titles_hdr:{en:'👑 TITLES',nl:'👑 TITELS',de:'👑 TITEL',fr:'👑 TITRES',es:'👑 TÍTULOS',zh:'👑 称号',ru:'👑 ТИТУЛЫ'},
+  active_lbl:{en:'Active',nl:'Actief',de:'Aktiv',fr:'Actif',es:'Activo',zh:'使用中',ru:'Активен'},
+  click_choose:{en:'Click to select',nl:'Klik om te kiezen',de:'Klicken zum Wählen',fr:'Cliquer pour choisir',es:'Clic para elegir',zh:'点击选择',ru:'Нажми, чтобы выбрать'},
+  ttl_rookie:{en:'The Rookie',nl:'De Rookie',de:'Der Rookie',fr:'Le Rookie',es:'El Novato',zh:'新手',ru:'Новичок'},
+  ttlu_rookie:{en:'Play 1 game',nl:'Speel 1 potje',de:'Spiele 1 Spiel',fr:'Joue 1 partie',es:'Juega 1 partida',zh:'玩1局',ru:'Сыграй 1 игру'},
+  ttl_comboking:{en:'Combo King',nl:'Combo Koning',de:'Combo-König',fr:'Roi du combo',es:'Rey del combo',zh:'连击之王',ru:'Король комбо'},
+  ttlu_comboking:{en:'Combo of 20',nl:'Combo van 20',de:'20er-Combo',fr:'Combo de 20',es:'Combo de 20',zh:'达成20连击',ru:'Комбо 20'},
+  ttl_verzamelaar:{en:'The Collector',nl:'De Verzamelaar',de:'Der Sammler',fr:'Le Collectionneur',es:'El Coleccionista',zh:'收藏家',ru:'Коллекционер'},
+  ttlu_verzamelaar:{en:'Own 15 items',nl:'Bezit 15 items',de:'Besitze 15 Items',fr:'Possède 15 objets',es:'Posee 15 objetos',zh:'拥有15件物品',ru:'Имей 15 предметов'},
+  ttl_rijkaard:{en:'The Tycoon',nl:'De Rijkaard',de:'Der Reiche',fr:'Le Riche',es:'El Ricachón',zh:'富豪',ru:'Богач'},
+  ttlu_rijkaard:{en:'Earn 1000 coins total',nl:'Verdien 1000 muntjes totaal',de:'Verdiene 1000 Münzen gesamt',fr:'Gagne 1000 pièces au total',es:'Gana 1000 monedas en total',zh:'累计赚1000硬币',ru:'Заработай 1000 монет'},
+  ttl_overlever:{en:'The Survivor',nl:'De Overlever',de:'Der Überlebende',fr:'Le Survivant',es:'El Superviviente',zh:'幸存者',ru:'Выживший'},
+  ttlu_overlever:{en:'Score 75 in one game',nl:'Score 75 in één potje',de:'75 Punkte in einem Spiel',fr:'75 points en une partie',es:'75 puntos en una partida',zh:'单局得75分',ru:'75 очков за игру'},
+  ttl_kistenjager:{en:'Crate Hunter',nl:'Kistenjager',de:'Kistenjäger',fr:'Chasseur de caisses',es:'Cazador de cajas',zh:'开箱猎人',ru:'Охотник за ящиками'},
+  ttlu_kistenjager:{en:'Open 10 crates',nl:'Open 10 kisten',de:'Öffne 10 Kisten',fr:'Ouvre 10 caisses',es:'Abre 10 cajas',zh:'打开10个箱子',ru:'Открой 10 ящиков'},
+  ttl_legende:{en:'Living Legend',nl:'Levende Legende',de:'Lebende Legende',fr:'Légende vivante',es:'Leyenda viviente',zh:'活传奇',ru:'Живая легенда'},
+  ttlu_legende:{en:'Reach prestige 1',nl:'Bereik prestige 1',de:'Erreiche Prestige 1',fr:'Atteins le prestige 1',es:'Alcanza prestigio 1',zh:'达到声望1',ru:'Достигни престижа 1'},
+  ttl_god:{en:'Ping Pong God',nl:'Ping Pong God',de:'Ping-Pong-Gott',fr:'Dieu du ping-pong',es:'Dios del ping pong',zh:'乒乓之神',ru:'Бог пинг-понга'},
+  ttlu_god:{en:'Reach level 30',nl:'Bereik level 30',de:'Erreiche Level 30',fr:'Atteins le niveau 30',es:'Alcanza nivel 30',zh:'达到30级',ru:'Достигни 30 уровня'},
+  crates_opened:{en:'Crates Opened',nl:'Kisten Geopend',de:'Kisten geöffnet',fr:'Caisses ouvertes',es:'Cajas abiertas',zh:'已开箱子',ru:'Открыто ящиков'},
+  legendary_found:{en:'Legendary',nl:'Legendarisch',de:'Legendär',fr:'Légendaire',es:'Legendario',zh:'传说',ru:'Легендарки'},
+  avg_score:{en:'Average Score',nl:'Gemiddelde Score',de:'Durchschnitt',fr:'Score moyen',es:'Puntuación media',zh:'平均分',ru:'Средний счёт'},
+  win_rate:{en:'Win Rate',nl:'Win Rate',de:'Siegquote',fr:'Taux de victoire',es:'Tasa de victorias',zh:'胜率',ru:'Винрейт'},
+  perfect_hits:{en:'Perfect Hits',nl:'Perfecte Treffers',de:'Perfekte Treffer',fr:'Frappes parfaites',es:'Golpes perfectos',zh:'完美击球',ru:'Идеальные удары'},
+  bosses_defeated:{en:'Bosses Defeated',nl:'Bosses Verslagen',de:'Bosse besiegt',fr:'Boss vaincus',es:'Jefes derrotados',zh:'击败Boss',ru:'Боссы побеждены'},
+  mystery_balls:{en:'Mystery Balls',nl:'Mystery Ballen',de:'Mystery-Bälle',fr:'Balles mystère',es:'Bolas misteriosas',zh:'神秘球',ru:'Мистические мячи'},
+  hof_sub:{en:'Your all-time best records!',nl:'Jouw allerbeste records!',de:'Deine besten Rekorde!',fr:'Tes meilleurs records !',es:'¡Tus mejores récords!',zh:'你的最佳记录！',ru:'Твои лучшие рекорды!'},
+  highest_level:{en:'Highest Level Ever',nl:'Hoogste Level ooit',de:'Höchstes Level',fr:'Niveau le plus haut',es:'Nivel más alto',zh:'最高等级',ru:'Макс. уровень'},
+  most_coins_game:{en:'Most coins in one game',nl:'Meeste muntjes in één potje',de:'Meiste Münzen in einem Spiel',fr:'Max de pièces en une partie',es:'Más monedas en una partida',zh:'单局最多硬币',ru:'Макс. монет за игру'},
+  login_record:{en:'Login streak record',nl:'Login streak record',de:'Login-Streak-Rekord',fr:'Record de connexions',es:'Récord de racha',zh:'登录连击记录',ru:'Рекорд серии входов'},
+  games_total:{en:'Total games',nl:'Potjes totaal',de:'Spiele gesamt',fr:'Parties totales',es:'Partidas totales',zh:'总场数',ru:'Всего игр'},
+  top5:{en:'🏅 Top 5 Scores',nl:'🏅 Top 5 Scores',de:'🏅 Top-5-Punkte',fr:'🏅 Top 5 des scores',es:'🏅 Top 5 puntuaciones',zh:'🏅 前5名',ru:'🏅 Топ-5 результатов'},
+  no_scores:{en:'No scores yet!',nl:'Nog geen scores!',de:'Noch keine Punkte!',fr:'Pas encore de scores !',es:'¡Aún no hay puntuaciones!',zh:'还没有分数！',ru:'Пока нет результатов!'},
+  bats_tab:{en:'🏓 Bats',nl:'🏓 Batjes',de:'🏓 Schläger',fr:'🏓 Raquettes',es:'🏓 Palas',zh:'🏓 球拍',ru:'🏓 Ракетки'},
+  maps_tab:{en:'🗺️ Fields',nl:'🗺️ Velden',de:'🗺️ Felder',fr:'🗺️ Terrains',es:'🗺️ Campos',zh:'🗺️ 场地',ru:'🗺️ Поля'},
+  balls_tab:{en:'⚽ Balls',nl:'⚽ Ballen',de:'⚽ Bälle',fr:'⚽ Balles',es:'⚽ Pelotas',zh:'⚽ 球',ru:'⚽ Мячи'},
+  upgrades_tab:{en:'⬆️ Upgrades',nl:'⬆️ Upgrades',de:'⬆️ Upgrades',fr:'⬆️ Améliorations',es:'⬆️ Mejoras',zh:'⬆️ 升级',ru:'⬆️ Улучшения'},
+  rar_common:{en:'Common',nl:'Gewoon',de:'Gewöhnlich',fr:'Commun',es:'Común',zh:'普通',ru:'Обычный'},
+  rar_rare:{en:'Rare',nl:'Zeldzaam',de:'Selten',fr:'Rare',es:'Raro',zh:'稀有',ru:'Редкий'},
+  rar_epic:{en:'Epic',nl:'Episch',de:'Episch',fr:'Épique',es:'Épico',zh:'史诗',ru:'Эпический'},
+  rar_legendary:{en:'Legendary',nl:'Legendarisch',de:'Legendär',fr:'Légendaire',es:'Legendario',zh:'传说',ru:'Легендарный'},
+  src_shop:{en:'Shop',nl:'Winkel',de:'Shop',fr:'Boutique',es:'Tienda',zh:'商店',ru:'Магазин'},
+  src_loot:{en:'Crate',nl:'Kist',de:'Kiste',fr:'Caisse',es:'Caja',zh:'箱子',ru:'Ящик'},
+  in_use:{en:'✓ In use',nl:'✓ In gebruik',de:'✓ In Benutzung',fr:'✓ Utilisé',es:'✓ En uso',zh:'✓ 使用中',ru:'✓ Используется'},
+  equip:{en:'Equip',nl:'Uitrusten',de:'Ausrüsten',fr:'Équiper',es:'Equipar',zh:'装备',ru:'Надеть'},
+  inv_empty:{en:'No items in this tab yet.<br>Buy items in the shop or open crates!',nl:'Nog geen items in dit tabblad.<br>Koop items in de winkel of open kisten!',de:'Noch keine Items hier.<br>Kaufe Items im Shop oder öffne Kisten!',fr:'Aucun objet ici.<br>Achète des objets ou ouvre des caisses !',es:'Aún no hay objetos.<br>¡Compra en la tienda o abre cajas!',zh:'此页还没有物品。<br>去商店购买或开箱子吧！',ru:'Здесь пока пусто.<br>Покупай в магазине или открывай ящики!'},
+  coins_word:{en:'coins',nl:'muntjes',de:'Münzen',fr:'pièces',es:'monedas',zh:'硬币',ru:'монет'},
+  featured:{en:'🌟 Daily Featured',nl:'🌟 Dagelijks Uitgelicht',de:'🌟 Tagesangebot',fr:'🌟 Offre du jour',es:'🌟 Destacado del día',zh:'🌟 每日精选',ru:'🌟 Товар дня'},
+  buy:{en:'Buy',nl:'Kopen',de:'Kaufen',fr:'Acheter',es:'Comprar',zh:'购买',ru:'Купить'},
+  piggy_lbl:{en:'Piggy Bank',nl:'Spaarpot',de:'Sparschwein',fr:'Tirelire',es:'Hucha',zh:'存钱罐',ru:'Копилка'},
+  piggy_desc:{en:'5% of earned coins · max 200 · breakable from 50',nl:'5% van verdiende muntjes · max 200 · breekbaar vanaf 50',de:'5% der Münzen · max 200 · ab 50 öffnenbar',fr:'5% des pièces gagnées · max 200 · cassable dès 50',es:'5% de monedas ganadas · máx 200 · rompible desde 50',zh:'收入的5% · 最多200 · 满50可砸',ru:'5% от монет · макс 200 · можно разбить от 50'},
+  break_open:{en:'Break open!',nl:'Breek open!',de:'Aufbrechen!',fr:'Casser !',es:'¡Romper!',zh:'砸开！',ru:'Разбить!'},
+  piggy_locked:{en:'🐷 Piggy bank opens from 50 coins!',nl:'🐷 Spaarpot kan pas open vanaf 50 muntjes!',de:'🐷 Sparschwein öffnet ab 50 Münzen!',fr:'🐷 Tirelire dès 50 pièces !',es:'🐷 ¡La hucha abre desde 50 monedas!',zh:'🐷 存钱罐满50硬币才能砸！',ru:'🐷 Копилка открывается от 50 монет!'},
+  free:{en:'Free',nl:'Gratis',de:'Gratis',fr:'Gratuit',es:'Gratis',zh:'免费',ru:'Бесплатно'},
+  bought:{en:'Owned',nl:'Gekocht',de:'Gekauft',fr:'Acheté',es:'Comprado',zh:'已拥有',ru:'Куплено'},
+  new_badge:{en:'NEW',nl:'NIEUW',de:'NEU',fr:'NOUVEAU',es:'NUEVO',zh:'新',ru:'НОВОЕ'},
+  select:{en:'Select',nl:'Selecteer',de:'Wählen',fr:'Choisir',es:'Seleccionar',zh:'选择',ru:'Выбрать'},
+  trail_active:{en:'✨ Trail active',nl:'✨ Trail actief',de:'✨ Trail aktiv',fr:'✨ Traînée active',es:'✨ Estela activa',zh:'✨ 轨迹已激活',ru:'✨ Шлейф активен'},
+  trail_upgrade:{en:'✨ Upgrade trail (75 🪙)',nl:'✨ Trail upgraden (75 🪙)',de:'✨ Trail verbessern (75 🪙)',fr:'✨ Améliorer la traînée (75 🪙)',es:'✨ Mejorar estela (75 🪙)',zh:'✨ 升级轨迹（75 🪙）',ru:'✨ Улучшить шлейф (75 🪙)'},
+  trail_upgraded:{en:'✨ Trail upgraded!',nl:'✨ Trail geüpgraded!',de:'✨ Trail verbessert!',fr:'✨ Traînée améliorée !',es:'✨ ¡Estela mejorada!',zh:'✨ 轨迹已升级！',ru:'✨ Шлейф улучшен!'},
+  not_enough_coins:{en:'❌ Not enough coins!',nl:'❌ Niet genoeg muntjes!',de:'❌ Nicht genug Münzen!',fr:'❌ Pas assez de pièces !',es:'❌ ¡Monedas insuficientes!',zh:'❌ 硬币不足！',ru:'❌ Недостаточно монет!'},
+  buy_prev_tier:{en:'❌ Buy the previous tier first!',nl:'❌ Koop de vorige tier eerst!',de:'❌ Kaufe zuerst die vorherige Stufe!',fr:'❌ Achète d’abord le niveau précédent !',es:'❌ ¡Compra primero el nivel anterior!',zh:'❌ 请先购买上一级！',ru:'❌ Сначала купи предыдущий уровень!'},
+  achieved:{en:'achieved',nl:'behaald',de:'erreicht',fr:'obtenus',es:'logrados',zh:'已达成',ru:'получено'},
+  locked_desc:{en:'Complete to unlock',nl:'Voltooi om te ontgrendelen',de:'Abschließen zum Freischalten',fr:'Termine pour débloquer',es:'Completa para desbloquear',zh:'完成以解锁',ru:'Выполни, чтобы открыть'},
+  reward:{en:'Reward',nl:'Beloning',de:'Belohnung',fr:'Récompense',es:'Recompensa',zh:'奖励',ru:'Награда'},
+  ad_bestScore:{en:'{n} points in one game',nl:'{n} punten in één potje',de:'{n} Punkte in einem Spiel',fr:'{n} points en une partie',es:'{n} puntos en una partida',zh:'单局{n}分',ru:'{n} очков за игру'},
+  ad_gamesPlayed:{en:'Play {n} games',nl:'Speel {n} potjes',de:'Spiele {n} Spiele',fr:'Joue {n} parties',es:'Juega {n} partidas',zh:'玩{n}局',ru:'Сыграй {n} игр'},
+  ad_totalCoins:{en:'Collect {n} coins',nl:'Verzamel {n} muntjes',de:'Sammle {n} Münzen',fr:'Collecte {n} pièces',es:'Reúne {n} monedas',zh:'收集{n}硬币',ru:'Собери {n} монет'},
+  ad_totalHits:{en:'Hit {n} balls away',nl:'Sla {n} ballen weg',de:'Schlage {n} Bälle weg',fr:'Frappe {n} balles',es:'Golpea {n} pelotas',zh:'击打{n}个球',ru:'Отбей {n} мячей'},
+  ad_level:{en:'Reach level {n}',nl:'Bereik level {n}',de:'Erreiche Level {n}',fr:'Atteins le niveau {n}',es:'Alcanza nivel {n}',zh:'达到{n}级',ru:'Достигни {n} уровня'},
+  ad_cratesOpened:{en:'Open {n} crates',nl:'Open {n} kisten',de:'Öffne {n} Kisten',fr:'Ouvre {n} caisses',es:'Abre {n} cajas',zh:'打开{n}个箱子',ru:'Открой {n} ящиков'},
+  ad_legendaryFound:{en:'Find {n} legendary item(s)',nl:'Vind {n} legendarische item(s)',de:'Finde {n} legendäre Items',fr:'Trouve {n} objet(s) légendaire(s)',es:'Encuentra {n} legendario(s)',zh:'找到{n}个传说物品',ru:'Найди {n} легендарок'},
+  ad_shopBatsOwned:{en:'Own {n} shop bats',nl:'Bezit {n} winkel-batjes',de:'Besitze {n} Shop-Schläger',fr:'Possède {n} raquettes',es:'Posee {n} palas',zh:'拥有{n}个商店球拍',ru:'Имей {n} ракеток'},
+  ad_shopMapsOwned:{en:'Own {n} shop fields',nl:'Bezit {n} winkel-velden',de:'Besitze {n} Shop-Felder',fr:'Possède {n} terrains',es:'Posee {n} campos',zh:'拥有{n}个商店场地',ru:'Имей {n} полей'},
+  ad_powerupsActivated:{en:'Activate {n} power-ups',nl:'Activeer {n} power-ups',de:'Aktiviere {n} Power-ups',fr:'Active {n} power-ups',es:'Activa {n} power-ups',zh:'激活{n}个道具',ru:'Активируй {n} бонусов'},
+  ad_bombsAvoided:{en:'Avoid {n} bombs',nl:'Ontwijk {n} bommen',de:'Weiche {n} Bomben aus',fr:'Évite {n} bombes',es:'Esquiva {n} bombas',zh:'躲开{n}个炸弹',ru:'Избеги {n} бомб'},
+  ad_goldenBallsHit:{en:'Hit {n} golden balls',nl:'Sla {n} gouden ballen weg',de:'Triff {n} goldene Bälle',fr:'Frappe {n} balles dorées',es:'Golpea {n} bolas doradas',zh:'击中{n}个金球',ru:'Отбей {n} золотых мячей'},
+  ad_dailyChallengesCompleted:{en:'Complete {n} daily challenges',nl:'Voltooi {n} dagelijkse uitdagingen',de:'Schließe {n} Tagesaufgaben ab',fr:'Termine {n} défis quotidiens',es:'Completa {n} retos diarios',zh:'完成{n}个每日挑战',ru:'Выполни {n} ежедневных заданий'},
+  ad_multiballHit:{en:'Hit {n} balls during multi-ball',nl:'Sla {n} ballen tijdens multi-ball',de:'Triff {n} Bälle im Multiball',fr:'Frappe {n} balles en multi-balle',es:'Golpea {n} en multibola',zh:'多球时击中{n}个',ru:'Отбей {n} мячей в мультиболе'},
+  ad_newHighscoreSet:{en:'Set {n} new highscores',nl:'Zet {n} nieuwe records',de:'Stelle {n} neue Rekorde auf',fr:'Bats {n} records',es:'Logra {n} récords',zh:'创造{n}次新纪录',ru:'Поставь {n} рекордов'},
+  ad_loginStreak:{en:'Log in {n} days in a row',nl:'Log {n} dagen op rij in',de:'Logge dich {n} Tage in Folge ein',fr:'Connecte-toi {n} jours de suite',es:'Inicia sesión {n} días seguidos',zh:'连续登录{n}天',ru:'Заходи {n} дней подряд'},
+  ad_prestige:{en:'Reach prestige {n}',nl:'Bereik prestige {n}',de:'Erreiche Prestige {n}',fr:'Atteins le prestige {n}',es:'Alcanza prestigio {n}',zh:'达到声望{n}',ru:'Достигни престижа {n}'},
+  ad_frenzyCount:{en:'Trigger {n} frenzy events',nl:'Activeer {n} frenzy events',de:'Löse {n} Frenzys aus',fr:'Déclenche {n} frénésies',es:'Activa {n} frenesíes',zh:'触发{n}次狂热',ru:'Запусти {n} безумий'},
+  ad_mysteryHit:{en:'Hit {n} mystery balls',nl:'Sla {n} mystery ballen',de:'Triff {n} Mystery-Bälle',fr:'Frappe {n} balles mystère',es:'Golpea {n} bolas misteriosas',zh:'击中{n}个神秘球',ru:'Отбей {n} мистических мячей'},
+  ad_bossDefeated:{en:'Defeat {n} bosses',nl:'Versla {n} bosses',de:'Besiege {n} Bosse',fr:'Bats {n} boss',es:'Derrota {n} jefes',zh:'击败{n}个Boss',ru:'Победи {n} боссов'},
+  ad_perfectHits:{en:'Make {n} perfect hits',nl:'Maak {n} perfecte treffers',de:'Mache {n} perfekte Treffer',fr:'Réussis {n} frappes parfaites',es:'Haz {n} golpes perfectos',zh:'完成{n}次完美击球',ru:'Сделай {n} идеальных ударов'},
+  cd_gameHits:{en:'Hit {n} balls in one game',nl:'Sla {n} ballen weg in één potje',de:'Schlage {n} Bälle in einem Spiel',fr:'Frappe {n} balles en une partie',es:'Golpea {n} pelotas en una partida',zh:'单局击打{n}个球',ru:'Отбей {n} мячей за игру'},
+  cd_gameScore:{en:'Reach score {n}',nl:'Bereik score {n}',de:'Erreiche {n} Punkte',fr:'Atteins le score {n}',es:'Alcanza {n} puntos',zh:'达到{n}分',ru:'Набери {n} очков'},
+  cd_gameCombo:{en:'Reach a combo of {n}',nl:'Bereik een combo van {n}',de:'Erreiche eine {n}er-Combo',fr:'Atteins un combo de {n}',es:'Logra un combo de {n}',zh:'达成{n}连击',ru:'Сделай комбо {n}'},
+  cd_gameCoins:{en:'Earn {n} coins in one game',nl:'Verdien {n} muntjes in één potje',de:'Verdiene {n} Münzen in einem Spiel',fr:'Gagne {n} pièces en une partie',es:'Gana {n} monedas en una partida',zh:'单局赚{n}硬币',ru:'Заработай {n} монет за игру'},
+  cd_powerupsUsed:{en:'Activate {n} power-up(s)',nl:'Activeer {n} power-up(s)',de:'Aktiviere {n} Power-up(s)',fr:'Active {n} power-up(s)',es:'Activa {n} power-up(s)',zh:'激活{n}个道具',ru:'Активируй {n} бонусов'},
+  cd_goldenHit:{en:'Hit {n} golden ball(s)',nl:'Sla {n} gouden bal(len) weg',de:'Triff {n} goldene Bälle',fr:'Frappe {n} balle(s) dorée(s)',es:'Golpea {n} bola(s) dorada(s)',zh:'击中{n}个金球',ru:'Отбей {n} золотых мячей'},
+  cd_dailyGames:{en:'Play {n} game(s)',nl:'Speel {n} potje(s)',de:'Spiele {n} Spiel(e)',fr:'Joue {n} partie(s)',es:'Juega {n} partida(s)',zh:'玩{n}局',ru:'Сыграй {n} игр'},
+  cd_scoreNoPowerup:{en:'Reach score {n} without power-ups',nl:'Bereik score {n} zonder power-ups',de:'Erreiche {n} Punkte ohne Power-ups',fr:'Atteins {n} sans power-ups',es:'Alcanza {n} sin power-ups',zh:'不用道具达到{n}分',ru:'Набери {n} без бонусов'},
+  cd_totalHits:{en:'Hit {n} balls this week',nl:'Sla {n} ballen weg deze week',de:'Schlage {n} Bälle diese Woche',fr:'Frappe {n} balles cette semaine',es:'Golpea {n} esta semana',zh:'本周击打{n}个球',ru:'Отбей {n} мячей за неделю'},
+  challenges_title:{en:'📅 Challenges',nl:'📅 Uitdagingen',de:'📅 Aufgaben',fr:'📅 Défis',es:'📅 Retos',zh:'📅 挑战',ru:'📅 Задания'},
+  weekly_tab:{en:'📆 Weekly',nl:'📆 Wekelijks',de:'📆 Wöchentlich',fr:'📆 Hebdo',es:'📆 Semanal',zh:'📆 每周',ru:'📆 Неделя'},
+  loot_buy_tab:{en:'🛒 Buy',nl:'🛒 Kopen',de:'🛒 Kaufen',fr:'🛒 Acheter',es:'🛒 Comprar',zh:'🛒 购买',ru:'🛒 Купить'},
+  loot_history_tab:{en:'📜 History',nl:'📜 Geschiedenis',de:'📜 Verlauf',fr:'📜 Historique',es:'📜 Historial',zh:'📜 历史',ru:'📜 История'},
+  crate_common:{en:'Common Crate',nl:'Gewone Kist',de:'Gewöhnliche Kiste',fr:'Caisse commune',es:'Caja común',zh:'普通箱子',ru:'Обычный ящик'},
+  crate_rare:{en:'Rare Crate',nl:'Zeldzame Kist',de:'Seltene Kiste',fr:'Caisse rare',es:'Caja rara',zh:'稀有箱子',ru:'Редкий ящик'},
+  crate_epic:{en:'Epic Crate',nl:'Epische Kist',de:'Epische Kiste',fr:'Caisse épique',es:'Caja épica',zh:'史诗箱子',ru:'Эпический ящик'},
+  crate_legendary:{en:'Legendary Crate',nl:'Legendarische Kist',de:'Legendäre Kiste',fr:'Caisse légendaire',es:'Caja legendaria',zh:'传说箱子',ru:'Легендарный ящик'},
+  open_btn:{en:'Open',nl:'Openen',de:'Öffnen',fr:'Ouvrir',es:'Abrir',zh:'打开',ru:'Открыть'},
+  open_excl:{en:'Open!',nl:'Openen!',de:'Öffnen!',fr:'Ouvrir !',es:'¡Abrir!',zh:'打开！',ru:'Открыть!'},
+  another_crate:{en:'🎁 Another crate!',nl:'🎁 Nog een kist!',de:'🎁 Noch eine Kiste!',fr:'🎁 Encore une caisse !',es:'🎁 ¡Otra caja!',zh:'🎁 再开一个！',ru:'🎁 Ещё ящик!'},
+  loot_hist_empty:{en:'No crates opened yet.<br>Open a crate to track your history!',nl:'Nog geen kisten geopend.<br>Open een kist om je geschiedenis bij te houden!',de:'Noch keine Kisten geöffnet.<br>Öffne eine Kiste für deinen Verlauf!',fr:'Aucune caisse ouverte.<br>Ouvre une caisse pour ton historique !',es:'Aún no abriste cajas.<br>¡Abre una para tu historial!',zh:'还没有开过箱子。<br>开一个箱子来记录历史吧！',ru:'Ящики ещё не открывались.<br>Открой ящик для истории!'},
+  loot_inv_empty:{en:'No crates in your inventory yet.<br>Play the Smash Season to earn free crates!',nl:'Je hebt nog geen kisten in je inventaris.<br>Speel het Smash Seizoen om gratis kisten te verdienen!',de:'Keine Kisten im Inventar.<br>Spiele die Smash Season für Gratis-Kisten!',fr:'Pas de caisses dans l’inventaire.<br>Joue à la Smash Season pour en gagner !',es:'No tienes cajas.<br>¡Juega la Smash Season para ganarlas gratis!',zh:'背包里没有箱子。<br>玩Smash赛季赢取免费箱子！',ru:'В инвентаре нет ящиков.<br>Играй в Smash Season и получай их бесплатно!'},
+  loot_footer:{en:'Crates contain exclusive bats, fields and coins you can’t buy in the shop.',nl:'Kisten bevatten exclusieve batjes, velden en muntjes die je niet in de winkel kunt kopen.',de:'Kisten enthalten exklusive Schläger, Felder und Münzen, die es nicht im Shop gibt.',fr:'Les caisses contiennent des objets exclusifs introuvables en boutique.',es:'Las cajas contienen objetos exclusivos que no están en la tienda.',zh:'箱子里有商店买不到的专属球拍、场地和硬币。',ru:'В ящиках — эксклюзивные ракетки, поля и монеты, которых нет в магазине.'},
+  wheel_sub:{en:'Spin every day for a free prize!',nl:'Draai elke dag gratis voor een prijs!',de:'Drehe jeden Tag gratis für einen Preis!',fr:'Tourne chaque jour pour un prix gratuit !',es:'¡Gira cada día gratis por un premio!',zh:'每天免费转一次赢奖品！',ru:'Крути каждый день и получай приз!'},
+  wheel_ready:{en:'Your free spin is ready!',nl:'Je gratis draai staat klaar!',de:'Dein Gratis-Dreh ist bereit!',fr:'Ton tour gratuit est prêt !',es:'¡Tu giro gratis está listo!',zh:'你的免费转动已就绪！',ru:'Бесплатное вращение готово!'},
+  wheel_back:{en:'Come back tomorrow!',nl:'Kom morgen terug!',de:'Komm morgen wieder!',fr:'Reviens demain !',es:'¡Vuelve mañana!',zh:'明天再来！',ru:'Возвращайся завтра!'},
+  wheel_tomorrow:{en:'⏳ Tomorrow again!',nl:'⏳ Morgen weer!',de:'⏳ Morgen wieder!',fr:'⏳ À demain !',es:'⏳ ¡Mañana más!',zh:'⏳ 明天再来！',ru:'⏳ Завтра снова!'},
+  wheel_spin:{en:'🎡 Spin!',nl:'🎡 Draai!',de:'🎡 Drehen!',fr:'🎡 Tourner !',es:'🎡 ¡Girar!',zh:'🎡 转！',ru:'🎡 Крутить!'},
+  wheel_already:{en:'⏳ You already spun today!',nl:'⏳ Je hebt vandaag al gedraaid!',de:'⏳ Heute schon gedreht!',fr:'⏳ Déjà tourné aujourd’hui !',es:'⏳ ¡Ya giraste hoy!',zh:'⏳ 今天已经转过了！',ru:'⏳ Сегодня уже крутил!'},
+  wheel_coins:{en:'+{n} coins!',nl:'+{n} muntjes!',de:'+{n} Münzen!',fr:'+{n} pièces !',es:'¡+{n} monedas!',zh:'+{n}硬币！',ru:'+{n} монет!'},
+  wheel_xp:{en:'XP boost: +50 XP!',nl:'XP-boost: +50 XP!',de:'EP-Boost: +50 EP!',fr:'Boost XP : +50 XP !',es:'¡Boost de XP: +50!',zh:'经验加成：+50经验！',ru:'Буст опыта: +50 XP!'},
+  wheel_crate_common:{en:'Free common crate! Open it at 📦 Crates.',nl:'Gratis gewone kist! Open hem bij 📦 Kisten.',de:'Gratis gewöhnliche Kiste! Öffne sie bei 📦 Kisten.',fr:'Caisse commune gratuite ! Ouvre-la dans 📦 Caisses.',es:'¡Caja común gratis! Ábrela en 📦 Cajas.',zh:'免费普通箱子！去📦箱子打开。',ru:'Бесплатный обычный ящик! Открой в 📦 Ящики.'},
+  wheel_crate_rare:{en:'Free rare crate! Open it at 📦 Crates.',nl:'Gratis zeldzame kist! Open hem bij 📦 Kisten.',de:'Gratis seltene Kiste! Öffne sie bei 📦 Kisten.',fr:'Caisse rare gratuite ! Ouvre-la dans 📦 Caisses.',es:'¡Caja rara gratis! Ábrela en 📦 Cajas.',zh:'免费稀有箱子！去📦箱子打开。',ru:'Бесплатный редкий ящик! Открой в 📦 Ящики.'},
+  wheel_nothing:{en:'Nothing today… try again tomorrow!',nl:'Helaas, vandaag niets... probeer morgen opnieuw!',de:'Heute leider nichts… versuch es morgen!',fr:'Rien aujourd’hui… réessaie demain !',es:'Nada hoy… ¡inténtalo mañana!',zh:'今天没有奖品……明天再试！',ru:'Сегодня пусто… попробуй завтра!'},
+  bp_sub:{en:'Play and level up to unlock exclusive rewards!',nl:'Speel en stijg in level om exclusieve beloningen te ontgrendelen!',de:'Spiele und steige auf für exklusive Belohnungen!',fr:'Joue et monte de niveau pour des récompenses exclusives !',es:'¡Juega y sube de nivel para recompensas exclusivas!',zh:'游戏升级解锁专属奖励！',ru:'Играй и повышай уровень ради наград!'},
+  bp_cur:{en:'CURRENT LEVEL',nl:'HUIDIG LEVEL',de:'AKTUELLES LEVEL',fr:'NIVEAU ACTUEL',es:'NIVEL ACTUAL',zh:'当前等级',ru:'ТЕКУЩИЙ УРОВЕНЬ'},
+  prestige_sub:{en:'You reached level 20! Prestige to start over with a permanent bonus.',nl:'Je hebt level 20 bereikt! Doe prestige om opnieuw te beginnen met een permanente bonus.',de:'Level 20 erreicht! Mache Prestige für einen permanenten Bonus.',fr:'Niveau 20 atteint ! Prestige pour recommencer avec un bonus permanent.',es:'¡Nivel 20! Haz prestigio para empezar con un bono permanente.',zh:'达到20级！转生可获得永久加成。',ru:'Уровень 20! Престиж — начни заново с постоянным бонусом.'},
+  prestige_rewards:{en:'Prestige {n} Rewards:',nl:'Prestige {n} Beloningen:',de:'Prestige-{n}-Belohnungen:',fr:'Récompenses Prestige {n} :',es:'Recompensas de Prestigio {n}:',zh:'声望{n}奖励：',ru:'Награды престижа {n}:'},
+  prestige_r2:{en:'+{n}% permanent coin bonus',nl:'+{n}% permanente muntjes bonus',de:'+{n}% permanenter Münzbonus',fr:'+{n}% bonus permanent',es:'+{n}% bono permanente',zh:'+{n}%永久硬币加成',ru:'+{n}% постоянный бонус монет'},
+  prestige_r3:{en:'100 coins starting bonus',nl:'100 muntjes startbonus',de:'100 Münzen Startbonus',fr:'100 pièces de départ',es:'100 monedas iniciales',zh:'100硬币起始奖励',ru:'100 монет на старт'},
+  prestige_warn:{en:'⚠️ Level resets to 1 · XP is cleared · Items are kept',nl:'⚠️ Level wordt gereset naar 1 · XP wordt gewist · Items blijven behouden',de:'⚠️ Level auf 1 zurückgesetzt · EP gelöscht · Items bleiben',fr:'⚠️ Niveau remis à 1 · XP effacée · Objets conservés',es:'⚠️ Nivel a 1 · XP borrada · Objetos conservados',zh:'⚠️ 等级重置为1 · 经验清零 · 物品保留',ru:'⚠️ Уровень сбросится до 1 · Опыт обнулится · Предметы останутся'},
+  prestige_do:{en:'🌟 Do Prestige!',nl:'🌟 Prestige doen!',de:'🌟 Prestige machen!',fr:'🌟 Faire Prestige !',es:'🌟 ¡Hacer Prestigio!',zh:'🌟 转生！',ru:'🌟 Сделать престиж!'},
+  frenzy_toast:{en:'🔥 <strong>FRENZY!</strong> 10 sec double coins!',nl:'🔥 <strong>FRENZY!</strong> 10 sec dubbele munten!',de:'🔥 <strong>FRENZY!</strong> 10 Sek. doppelte Münzen!',fr:'🔥 <strong>FRÉNÉSIE !</strong> 10 s pièces doublées !',es:'🔥 <strong>¡FRENESÍ!</strong> ¡10 s monedas dobles!',zh:'🔥 <strong>狂热！</strong>10秒双倍硬币！',ru:'🔥 <strong>БЕЗУМИЕ!</strong> 10 сек двойные монеты!'},
+  boss_toast:{en:'🏆 BOSS DEFEATED! +5🪙 +15 XP',nl:'🏆 BOSS VERSLAGEN! +5🪙 +15 XP',de:'🏆 BOSS BESIEGT! +5🪙 +15 EP',fr:'🏆 BOSS VAINCU ! +5🪙 +15 XP',es:'🏆 ¡JEFE DERROTADO! +5🪙 +15 XP',zh:'🏆 BOSS被击败！+5🪙 +15经验',ru:'🏆 БОСС ПОБЕЖДЁН! +5🪙 +15 XP'},
+  boss_warn:{en:'⚔️ BOSS BALL! Hit it 3 times!',nl:'⚔️ BOSS BAL! Raak 3 keer!',de:'⚔️ BOSS-BALL! Triff ihn 3-mal!',fr:'⚔️ BALLE BOSS ! Frappe 3 fois !',es:'⚔️ ¡BOLA JEFE! ¡Golpéala 3 veces!',zh:'⚔️ BOSS球！击打3次！',ru:'⚔️ БОСС-МЯЧ! Отбей 3 раза!'},
+  first_win:{en:'🎉 <strong>First win of the day! +25 🪙</strong>',nl:'🎉 <strong>Eerste overwinning van de dag! +25 🪙</strong>',de:'🎉 <strong>Erster Sieg des Tages! +25 🪙</strong>',fr:'🎉 <strong>Première victoire du jour ! +25 🪙</strong>',es:'🎉 <strong>¡Primera victoria del día! +25 🪙</strong>',zh:'🎉 <strong>今日首胜！+25 🪙</strong>',ru:'🎉 <strong>Первая победа дня! +25 🪙</strong>'},
+  streak_toast:{en:'🔥 <strong>Day {d} streak!</strong> +{b} coins bonus!',nl:'🔥 <strong>Dag {d} streak!</strong> +{b} muntjes bonus!',de:'🔥 <strong>Tag {d} Streak!</strong> +{b} Münzen Bonus!',fr:'🔥 <strong>Série de {d} jours !</strong> +{b} pièces !',es:'🔥 <strong>¡Racha de {d} días!</strong> ¡+{b} monedas!',zh:'🔥 <strong>连续登录{d}天！</strong>+{b}硬币奖励！',ru:'🔥 <strong>Серия {d} дней!</strong> +{b} монет!'},
+  lvl_toast:{en:'⭐ <strong>Level {n} reached!</strong><br><small>Smash Season rewards await!</small>',nl:'⭐ <strong>Level {n} bereikt!</strong><br><small>Smash Seizoen beloningen wachten op je!</small>',de:'⭐ <strong>Level {n} erreicht!</strong><br><small>Smash-Season-Belohnungen warten!</small>',fr:'⭐ <strong>Niveau {n} atteint !</strong><br><small>Des récompenses t’attendent !</small>',es:'⭐ <strong>¡Nivel {n}!</strong><br><small>¡Te esperan recompensas!</small>',zh:'⭐ <strong>达到{n}级！</strong><br><small>赛季奖励等着你！</small>',ru:'⭐ <strong>Уровень {n}!</strong><br><small>Награды сезона ждут!</small>'},
+  milestone_toast:{en:'🎁 <strong>Milestone reached! Free crate received!</strong>',nl:'🎁 <strong>Mijlpaal bereikt! Gratis kist ontvangen!</strong>',de:'🎁 <strong>Meilenstein erreicht! Gratis-Kiste erhalten!</strong>',fr:'🎁 <strong>Palier atteint ! Caisse gratuite reçue !</strong>',es:'🎁 <strong>¡Hito alcanzado! ¡Caja gratis!</strong>',zh:'🎁 <strong>达成里程碑！获得免费箱子！</strong>',ru:'🎁 <strong>Рубеж достигнут! Бесплатный ящик!</strong>'},
+  two_balls:{en:'2 BALLS!',nl:t('two_balls'),de:'2 BÄLLE!',fr:'2 BALLES !',es:'¡2 BOLAS!',zh:'两个球！',ru:'2 МЯЧА!'},
+  shield_absorbed:{en:'🛡️ Shield absorbed!',nl:'🛡️ Schild geabsorbeerd!',de:'🛡️ Schild absorbiert!',fr:'🛡️ Bouclier absorbé !',es:'🛡️ ¡Escudo absorbido!',zh:'🛡️ 护盾抵消！',ru:'🛡️ Щит поглотил удар!'},
 };
 function t(key){
   const lang=typeof S!=='undefined'&&S&&S.language?S.language:'en';
   return(TRANSLATIONS[key]&&(TRANSLATIONS[key][lang]||TRANSLATIONS[key]['en']))||key;
 }
+function achDescTxt(a){const k='ad_'+a.stat;const s=t(k);return s===k?a.desc:s.replace('{n}',a.target);}
+function chDescTxt(c){const k='cd_'+c.stat;const s=t(k);return s===k?c.desc:s.replace('{n}',c.target);}
 canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect(),sx=W/r.width,sy=H/r.height;
   racket.x=(e.clientX-r.left)*sx;racket.y=(e.clientY-r.top)*sy;
@@ -2717,7 +2871,7 @@ function pauseGame(){
     </div>
     <div class="btnrow">
       <button class="btn" onclick="resumeGame()">${t('resume')}</button>
-      <button class="btn orange" onclick="triggerGameOver('Spel gestopt.')">${t('stop')}</button>
+      <button class="btn orange" onclick="triggerGameOver('go_stopped')">${t('stop')}</button>
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -2775,7 +2929,7 @@ function spawnBossball(){
     departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[],
     bomb:false,golden:false,powerup:null,boss:true,bossHitsLeft:3};
   balls.push(b);
-  showToast('⚔️ BOSS BAL! Raak 3 keer!','lvl-toast',3000);
+  showToast(t('boss_warn'),'lvl-toast',3000);
 }
 
 function outSide(b){
@@ -2965,7 +3119,7 @@ function registerPoint(x,y,b){
   if(score>0&&score%40===0&&!frenzyActive){
     frenzyActive=true;frenzyTimer=600;
     S.stats.frenzyCount=(S.stats.frenzyCount||0)+1;checkAchievement('frenzyCount',S.stats.frenzyCount);
-    showToast('🔥 <strong>FRENZY!</strong> 10 sec dubbele munten!','lvl-toast',3000);playComboMilestone();
+    showToast(t('frenzy_toast'),'lvl-toast',3000);playComboMilestone();
   }
   // V14: Mystery ball bonus
   if(b&&b.mystery){
@@ -3103,7 +3257,7 @@ function loop(){
           spawnBall();
         } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
         else{
-          triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;
+          triggerGameOver('go_wrong_side');return;
         }
       }
       else if(b.cooldown<=0){
@@ -3111,7 +3265,7 @@ function loop(){
         const dx=b.x-racket.x,dy=b.y-racket.y,dist=Math.hypot(dx,dy);
         if(dist<b.r+batW){
           if(b.bomb){
-            triggerShake(8,6);triggerGameOver('💣 Je raakte de bom!');return;}
+            triggerShake(8,6);triggerGameOver('go_bomb');return;}
           // Feature 2: Boss hit handling
           if(b.boss){
             b.bossHitsLeft--;b.flash=1;playBossHit();triggerShake(5,4);
@@ -3124,7 +3278,7 @@ function loop(){
               S.stats.bossDefeated=(S.stats.bossDefeated||0)+1;
               addPopup(b.x,b.y-50,'+5🪙 BOSS!','#ffd700');
               triggerHitEffect(b.x,b.y);
-              showToast('🏆 BOSS VERSLAGEN! +5🪙 +15 XP','lvl-toast',3000);
+              showToast(t('boss_toast'),'lvl-toast',3000);
               spawnBall();
             } else {
               const nx2=dx/dist,ny2=dy/dist;
@@ -3155,7 +3309,7 @@ function loop(){
               shieldActive=false;activePowerup=null;powerupTimer=0;
               const dot2=b.vx*nx+b.vy*ny;b.vx-=2*dot2*nx;b.vy-=2*dot2*ny;b.cooldown=8;
               combo=0;comboMult=1;triggerWrongEffect(b.x,b.y);
-              showToast('🛡️ Schild geabsorbeerd!');
+              showToast(t('shield_absorbed'));
             } else {
               const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;playWrong();
             }
@@ -3269,8 +3423,8 @@ function draw(){
   if(activeBalls.length>=2){
     ctx.save();ctx.textAlign='center';ctx.textBaseline='top';
     ctx.font='bold 15px Orbitron,Arial';ctx.fillStyle='#ff8800';
-    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.strokeText('2 BALLEN!',W/2,6);
-    ctx.fillText('2 BALLEN!',W/2,6);
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.strokeText(t('two_balls'),W/2,6);
+    ctx.fillText(t('two_balls'),W/2,6);
     ctx.restore();
   }
   // Speed indicator
@@ -3664,7 +3818,7 @@ function triggerGameOver(reden){
   if(score>=10&&S.lastWinDate!==todayStr){
     S.lastWinDate=todayStr;dailyWinBonus=25;
     S.coins+=25;S.stats.totalCoins+=25;
-    showToast('🎉 <strong>Eerste overwinning van de dag! +25 🪙</strong>','lvl-toast',4000);
+    showToast(t('first_win'),'lvl-toast',4000);
   }
   // Insert into top 5 scores
   S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
@@ -3684,9 +3838,9 @@ function triggerGameOver(reden){
     <div style="font-size:1rem;color:#778;margin-bottom:4px">${t('game_over')}</div>
     <div style="font-family:'Orbitron',monospace;font-size:3.5rem;color:var(--accent);line-height:1">${score}</div>
     ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">'+t('new_record')+'</div>':
-      (S.best>0?`<div style="color:#889;font-size:.82rem;margin:4px 0">📊 \${Math.round(score/S.best*100)}% van je \${t('best').toLowerCase()} (\${S.best})</div>`:'')
+      (S.best>0?`<div style="color:#889;font-size:.82rem;margin:4px 0">${t('pct_of_best').replace('{p}',Math.round(score/S.best*100)).replace('{b}',S.best)}</div>`:'')
     }
-    <div style="font-size:.8rem;color:#556;margin:4px 0">${reden}</div>
+    <div style="font-size:.8rem;color:#556;margin:4px 0">${t(reden)}</div>
     <div style="font-size:.78rem;color:#667;margin:2px 0">${t('difficulty')}: ${getDiff().emoji} ${diffName()}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0">
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
@@ -3714,15 +3868,15 @@ function triggerGameOver(reden){
       <button class="btn" onclick="startGame()">${t('play_again')}</button>
       <button class="btn orange" onclick="showMenu()">${t('menu_btn')}</button>
     </div>
-    <button onclick="copyScore()" style="margin-top:10px;background:rgba(255,255,255,0.07);color:#c8ffe8;border:1px solid rgba(0,255,153,0.25);border-radius:20px;padding:7px 18px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer">📋 Score kopiëren</button>
+    <button onclick="copyScore()" style="margin-top:10px;background:rgba(255,255,255,0.07);color:#c8ffe8;border:1px solid rgba(0,255,153,0.25);border-radius:20px;padding:7px 18px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer">${t('copy_score')}</button>
   </div>`;
   overlay.style.display='flex';
 }
 
 // ── COPY SCORE ────────────────────────────────────────────────────────────────
 function copyScore(){
-  const txt=`🏓 Ik scoorde ${S.best} in Ping Pong Blaster! Kan jij beter? 🏓`;
-  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Score gekopieerd!')).catch(()=>showToast('❌ Kopiëren mislukt'));
+  const txt=t('share_text').replace('{s}',S.best);
+  navigator.clipboard.writeText(txt).then(()=>showToast(t('copied'))).catch(()=>showToast(t('copy_failed')));
 }
 
 // ── MENU ──────────────────────────────────────────────────────────────────────
@@ -3734,14 +3888,14 @@ function showInventory(){
 }
 function renderInventoryScreen(){
   overlay.innerHTML=`<div class="panel" style="max-width:580px">
-    <h1 style="font-size:1.4rem">🎒 Inventaris</h1>
+    <h1 style="font-size:1.4rem">${t('inventory')}</h1>
     <div class="tabs">
-      <button class="tab ${inventoryTab==='bats'?'active':''}" onclick="inventoryTab='bats';renderInventoryScreen()">🏓 Batjes</button>
-      <button class="tab ${inventoryTab==='maps'?'active':''}" onclick="inventoryTab='maps';renderInventoryScreen()">🗺️ Velden</button>
-      <button class="tab ${inventoryTab==='balls'?'active':''}" onclick="inventoryTab='balls';renderInventoryScreen()">⚽ Ballen</button>
+      <button class="tab ${inventoryTab==='bats'?'active':''}" onclick="inventoryTab='bats';renderInventoryScreen()">${t('bats_tab')}</button>
+      <button class="tab ${inventoryTab==='maps'?'active':''}" onclick="inventoryTab='maps';renderInventoryScreen()">${t('maps_tab')}</button>
+      <button class="tab ${inventoryTab==='balls'?'active':''}" onclick="inventoryTab='balls';renderInventoryScreen()">${t('balls_tab')}</button>
     </div>
     <div class="shop-grid" id="invGrid"></div>
-    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
 
@@ -3760,8 +3914,8 @@ function renderInventoryScreen(){
     curActive=S.activeBallSkin;
   }
 
-  const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
-  const sourceLabels={shop:'Winkel',loot:'Kist',bp:'Battle Pass'};
+  const rarityNames={common:t('rar_common'),rare:t('rar_rare'),epic:t('rar_epic'),legendary:t('rar_legendary')};
+  const sourceLabels={shop:t('src_shop'),loot:t('src_loot'),bp:'Battle Pass'};
 
   items.forEach(item=>{
     const isActive=item.id===curActive;
@@ -3769,15 +3923,15 @@ function renderInventoryScreen(){
     div.className='shop-item rarity-'+item.rarity+(isActive?' active-item':'');
     const prevId='inv_pv_'+item.id;
     div.innerHTML=`
-      ${isActive?'<div class="badge-row"><span class="badge active">Actief</span></div>':''}
+      ${isActive?`<div class="badge-row"><span class="badge active">${t('active_lbl')}</span></div>`:''}
       <canvas id="${prevId}" width="74" height="64" style="border-radius:5px"></canvas>
       <div class="rarity-label">${rarityNames[item.rarity]}</div>
       <div class="item-name">${item.emoji} ${item.name}</div>
       <div style="font-size:.68rem;color:#556;margin-bottom:6px">${sourceLabels[item.source]||''}</div>
       <div>
         ${isActive
-          ? `<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" disabled>✓ In gebruik</button>`
-          : `<button class="btn" style="padding:5px 12px;font-size:.75rem" onclick="equipInventoryItem('${inventoryTab}','${item.id}')">Uitrusten</button>`
+          ? `<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" disabled>${t('in_use')}</button>`
+          : `<button class="btn" style="padding:5px 12px;font-size:.75rem" onclick="equipInventoryItem('${inventoryTab}','${item.id}')">${t('equip')}</button>`
         }
       </div>`;
     grid.appendChild(div);
@@ -3791,7 +3945,7 @@ function renderInventoryScreen(){
   });
 
   if(!items.length){
-    grid.innerHTML=`<div style="grid-column:span 3;color:#445;text-align:center;padding:20px">Nog geen items in dit tabblad.<br>Koop items in de winkel of open kisten!</div>`;
+    grid.innerHTML=`<div style="grid-column:span 3;color:#445;text-align:center;padding:20px">${t('inv_empty')}</div>`;
   }
 }
 
@@ -3892,14 +4046,14 @@ function renderShop(){
     if(fItemDef&&!fOwned){
       const fTab=fi.type==='bat'?'bats':fi.type==='map'?'maps':'balls';
       featuredHtml=`<div style="background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.35);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:.8rem;font-weight:700;color:#ffd700;margin-bottom:6px">🌟 Dagelijks Uitgelicht</div>
+        <div style="font-size:.8rem;font-weight:700;color:#ffd700;margin-bottom:6px">${t('featured')}</div>
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:1.6rem">${fItemDef.emoji}</span>
           <div style="flex:1">
             <div style="font-size:.9rem;font-weight:700">${fItemDef.name}</div>
             <div style="font-size:.8rem;color:#888;margin-top:2px"><span style="text-decoration:line-through;color:#556">🪙 ${fi.originalPrice}</span> <span style="color:#44ff88;font-weight:700">🪙 ${fi.discountedPrice}</span> <span style="color:#ffd700;font-size:.75rem">-20%</span></div>
           </div>
-          <button class="btn gold" style="padding:6px 14px;font-size:.78rem" onclick="buyFeaturedItem()" ${S.coins<fi.discountedPrice?'disabled':''}>Kopen</button>
+          <button class="btn gold" style="padding:6px 14px;font-size:.78rem" onclick="buyFeaturedItem()" ${S.coins<fi.discountedPrice?'disabled':''}>${t('buy')}</button>
         </div>
       </div>`;
     }
@@ -3909,26 +4063,26 @@ function renderShop(){
     <div style="display:flex;align-items:center;gap:12px">
       <span style="font-size:1.6rem">🐷</span>
       <div style="flex:1;text-align:left">
-        <div style="font-size:.9rem;font-weight:700">Spaarpot: ${piggyCoins} 🪙</div>
+        <div style="font-size:.9rem;font-weight:700">${t('piggy_lbl')}: ${piggyCoins} 🪙</div>
         <div style="background:rgba(255,255,255,0.08);border-radius:6px;height:8px;margin-top:5px;overflow:hidden"><div style="background:linear-gradient(90deg,#ff8fab,#ffd700);height:100%;width:${Math.min(100,(S.piggyBank||0)/200*100)}%"></div></div>
-        <div style="font-size:.7rem;color:#667;margin-top:3px">5% van verdiende muntjes · max 200 · breekbaar vanaf 50</div>
+        <div style="font-size:.7rem;color:#667;margin-top:3px">${t('piggy_desc')}</div>
       </div>
-      <button class="btn ${piggyCoins>=50?'gold':'secondary'}" style="padding:6px 14px;font-size:.78rem" onclick="breakPiggyBank()" ${piggyCoins>=50?'':'disabled'}>Breek open!</button>
+      <button class="btn ${piggyCoins>=50?'gold':'secondary'}" style="padding:6px 14px;font-size:.78rem" onclick="breakPiggyBank()" ${piggyCoins>=50?'':'disabled'}>${t('break_open')}</button>
     </div>
   </div>`;
   overlay.innerHTML=`<div class="panel" style="max-width:580px">
-    <h1 style="font-size:1.4rem">🛒 Winkel</h1>
-    <div style="color:var(--coin);font-weight:700;margin-bottom:10px;font-family:'Orbitron',monospace">🪙 ${S.coins} muntjes</div>
+    <h1 style="font-size:1.4rem">${t('shop')}</h1>
+    <div style="color:var(--coin);font-weight:700;margin-bottom:10px;font-family:'Orbitron',monospace">🪙 ${S.coins} ${t('coins_word')}</div>
     ${featuredHtml}
     ${piggyHtml}
     <div class="tabs">
-      <button class="tab ${shopTab==='bats'?'active':''}" onclick="shopTab='bats';renderShop()">🏓 Batjes</button>
-      <button class="tab ${shopTab==='maps'?'active':''}" onclick="shopTab='maps';renderShop()">🗺️ Velden</button>
-      <button class="tab ${shopTab==='balls'?'active':''}" onclick="shopTab='balls';renderShop()">⚽ Ballen</button>
-      <button class="tab ${shopTab==='upgrades'?'active':''}" onclick="shopTab='upgrades';renderShop()">⬆️ Upgrades</button>
+      <button class="tab ${shopTab==='bats'?'active':''}" onclick="shopTab='bats';renderShop()">${t('bats_tab')}</button>
+      <button class="tab ${shopTab==='maps'?'active':''}" onclick="shopTab='maps';renderShop()">${t('maps_tab')}</button>
+      <button class="tab ${shopTab==='balls'?'active':''}" onclick="shopTab='balls';renderShop()">${t('balls_tab')}</button>
+      <button class="tab ${shopTab==='upgrades'?'active':''}" onclick="shopTab='upgrades';renderShop()">${t('upgrades_tab')}</button>
     </div>
     <div class="shop-grid" id="sg"></div>
-    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
   const grid=document.getElementById('sg');
@@ -3954,21 +4108,21 @@ function renderShop(){
     div.className='shop-item rarity-'+item.rarity+(isOwned?' owned':'')+(isActive?' active-item':'');
     const prevId='pv_'+item.id+'_'+shopTab;
     let badges='<div class="badge-row">';
-    if(isActive)badges+='<span class="badge active">Actief</span>';
-    else if(isOwned)badges+='<span class="badge owned">Gekocht</span>';
-    if(item.isNew&&!isOwned)badges+='<span class="badge" style="background:#ff3366;color:#fff;animation:newPulse 1.5s ease-in-out infinite">NIEUW</span>';
+    if(isActive)badges+='<span class="badge active">'+t('active_lbl')+'</span>';
+    else if(isOwned)badges+='<span class="badge owned">'+t('bought')+'</span>';
+    if(item.isNew&&!isOwned)badges+='<span class="badge" style="background:#ff3366;color:#fff;animation:newPulse 1.5s ease-in-out infinite">'+t('new_badge')+'</span>';
     badges+='</div>';
-    const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
+    const rarityNames={common:t('rar_common'),rare:t('rar_rare'),epic:t('rar_epic'),legendary:t('rar_legendary')};
     div.innerHTML=`${badges}
       <canvas id="${prevId}" width="74" height="64" style="border-radius:5px"></canvas>
       <div class="rarity-label">${rarityNames[item.rarity]}</div>
       <div class="item-name">${item.emoji} ${item.name}</div>
-      <div class="item-price">${item.price===0?'<span style="color:var(--accent)">Gratis</span>':'🪙 '+item.price}</div>
+      <div class="item-price">${item.price===0?'<span style="color:var(--accent)">'+t('free')+'</span>':'🪙 '+item.price}</div>
       <div style="margin-top:6px">
-      ${isActive?`<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" disabled>✓ In gebruik</button>`:
-        isOwned?`<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" onclick="selectItem('${shopTab}','${item.id}')">Selecteer</button>`:
-        `<button class="btn ${S.coins>=item.price?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyItem('${shopTab}','${item.id}',${item.price})" ${S.coins<item.price?'disabled':''}>Kopen</button>`}
-      ${shopTab==='bats'&&isOwned&&item.source==='shop'?(S.trailUpgrades&&S.trailUpgrades[item.id]?`<br><button class="btn secondary" style="padding:3px 10px;font-size:.7rem;margin-top:4px" disabled>\u2728 Trail actief</button>`:`<br><button class="btn secondary" style="padding:3px 10px;font-size:.7rem;margin-top:4px;color:#aaddff" onclick="upgradeTrail('${item.id}')">\u2728 Trail upgraden (75 \u{1FA99})</button>`):''}
+      ${isActive?`<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" disabled>${t('in_use')}</button>`:
+        isOwned?`<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" onclick="selectItem('${shopTab}','${item.id}')">${t('select')}</button>`:
+        `<button class="btn ${S.coins>=item.price?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyItem('${shopTab}','${item.id}',${item.price})" ${S.coins<item.price?'disabled':''}>${t('buy')}</button>`}
+      ${shopTab==='bats'&&isOwned&&item.source==='shop'?(S.trailUpgrades&&S.trailUpgrades[item.id]?`<br><button class="btn secondary" style="padding:3px 10px;font-size:.7rem;margin-top:4px" disabled>${t('trail_active')}</button>`:`<br><button class="btn secondary" style="padding:3px 10px;font-size:.7rem;margin-top:4px;color:#aaddff" onclick="upgradeTrail('${item.id}')">${t('trail_upgrade')}</button>`):''}
       </div>`;
     grid.appendChild(div);
     setTimeout(()=>{
@@ -3994,7 +4148,7 @@ function renderShop(){
 }
 
 function buyItem(tab,id,price){
-  if(S.coins<price){showToast('❌ Niet genoeg muntjes!');return;}
+  if(S.coins<price){showToast(t('not_enough_coins'));return;}
   S.coins-=price;
   if(tab==='bats')S.ownedBats.push(id);
   else if(tab==='maps')S.ownedMaps.push(id);
@@ -4065,21 +4219,21 @@ function renderUpgradesShop(grid){
 }
 
 function buyCoinBoostTier(tier,cost){
-  if(S.coins<cost){showToast('❌ Niet genoeg muntjes!');return;}
-  if((S.coinBoostTier||0)!==tier-1){showToast('❌ Koop de vorige tier eerst!');return;}
+  if(S.coins<cost){showToast(t('not_enough_coins'));return;}
+  if((S.coinBoostTier||0)!==tier-1){showToast(t('buy_prev_tier'));return;}
   S.coins-=cost;S.coinBoostTier=tier;
   saveState();showToast(`🪙 Munt Boost tier ${tier} gekocht! +${tier*10}% munten`);renderShop();
 }
 function buyBatWidthTier(tier,cost){
-  if(S.coins<cost){showToast('❌ Niet genoeg muntjes!');return;}
-  if((S.batWidthTier||0)!==tier-1){showToast('❌ Koop de vorige tier eerst!');return;}
+  if(S.coins<cost){showToast(t('not_enough_coins'));return;}
+  if((S.batWidthTier||0)!==tier-1){showToast(t('buy_prev_tier'));return;}
   S.coins-=cost;S.batWidthTier=tier;
   saveState();showToast(`🏓 Bat breedte tier ${tier} gekocht!`);renderShop();
 }
 function buyFeaturedItem(){
   if(!S.featuredItem)return;
   const fi=S.featuredItem;
-  if(S.coins<fi.discountedPrice){showToast('❌ Niet genoeg muntjes!');return;}
+  if(S.coins<fi.discountedPrice){showToast(t('not_enough_coins'));return;}
   S.coins-=fi.discountedPrice;
   const tab=fi.type==='bat'?'bats':fi.type==='map'?'maps':'balls';
   if(fi.type==='bat')S.ownedBats.push(fi.id);
@@ -4090,10 +4244,10 @@ function buyFeaturedItem(){
   checkAllAchievements();
 }
 function upgradeTrail(batId){
-  if(S.coins<75){showToast('\u274C Niet genoeg muntjes!');return;}
+  if(S.coins<75){showToast(t('not_enough_coins'));return;}
   const trailColors={classic:'#ff7070',neon:'#dd55ff',goud:'#ffdd33',vuur:'#ff8833',diamant:'#bbe6ff',ocean:'#44bbff',cyber:'#00ffdd',lava:'#ff6622',bliksem:'#ffff44',ijs:'#cceeff',glas:'#cce6ff',kosmisch:'#aa66ff',draak:'#66ff44',giftig:'#33ff77',ridder:'#ccccee',koninklijk:'#ffd633',rainbow:'#ff66ff',shadow:'#aa44ff',schaduwkloon:'#aa44ff',pingmaster:'#ffe055',samurai:'#ff4444',mecha:'#00e6ff',engel:'#fff0b0',phantom:'#bbbbdd'};
   S.coins-=75;S.trailUpgrades[batId]=trailColors[batId]||'#ffffff';
-  saveState();showToast('\u2728 Trail ge\u00FCpgraded!');renderShop();
+  saveState();showToast(t('trail_upgraded'));renderShop();
 }
 function selectItem(tab,id){
   if(tab==='bats')S.activeBat=id;
@@ -4107,9 +4261,9 @@ function showBP(){
   gameState='bp';startMenuLoop();
   overlay.innerHTML=`<div class="panel" style="max-width:600px">
     <h1 style="font-size:1.4rem">⚡ Smash Seizoen</h1>
-    <p class="subtitle" style="margin-bottom:10px">Speel en stijg in level om exclusieve beloningen te ontgrendelen!</p>
+    <p class="subtitle" style="margin-bottom:10px">${t('bp_sub')}</p>
     <div class="level-card" style="margin-bottom:10px">
-      <div><div style="font-size:.65rem;color:#556">HUIDIG LEVEL</div><div class="level-num">${S.level}</div></div>
+      <div<div style="font-size:.65rem;color:#556">${t('bp_cur')}</div><div class="level-num">${S.level}</div></div>
       <div class="level-info">
         <div style="font-size:.85rem;font-weight:700">${getLevelTitle(S.level)}</div>
         <div style="font-size:.72rem;color:#556;margin-top:2px">${S.level<20?S.xp+' / '+xpForLevel(S.level)+' XP':'MAX LEVEL'}</div>
@@ -4117,7 +4271,7 @@ function showBP(){
       </div>
     </div>
     <div class="bp-track" id="bptrack"></div>
-    <div class="btnrow" style="margin-top:4px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow" style="margin-top:4px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
   const track=document.getElementById('bptrack');
@@ -4138,10 +4292,10 @@ function showAchievements(){
   gameState='achievements';
   const done=Object.keys(S.achievements).length;
   overlay.innerHTML=`<div class="panel" style="max-width:580px">
-    <h1 style="font-size:1.4rem">🏆 Prestaties</h1>
-    <p class="subtitle" style="margin-bottom:10px">${done} / ${ACHIEVEMENTS.length} behaald</p>
+    <h1 style="font-size:1.4rem">${t('achievements')}</h1>
+    <p class="subtitle" style="margin-bottom:10px">${done} / ${ACHIEVEMENTS.length} ${t('achieved')}</p>
     <div class="ach-grid" id="ag"></div>
-    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';startMenuLoop();
   const ag=document.getElementById('ag');
@@ -4162,10 +4316,10 @@ function showAchievements(){
     div.innerHTML=`<div class="ach-icon">${isDone?a.icon:'🔒'}</div>
       <div style="flex:1">
         <div class="ach-name">${isDone?a.name:'???'}</div>
-        <div class="ach-desc">${isDone?a.desc:'Voltooi om te ontgrendelen'}</div>
+        <div class="ach-desc">${isDone?achDescTxt(a):t('locked_desc')}</div>
         ${!isDone?`<div class="ach-prog">${cur} / ${a.target}</div>
         <div class="ach-prog-bar"><div class="ach-prog-fill" style="width:${pct}%"></div></div>`:''}
-        <div class="ach-prog" style="margin-top:3px;color:var(--coin)">Beloning: 🪙 ${a.reward}</div>
+        <div class="ach-prog" style="margin-top:3px;color:var(--coin)">${t('reward')}: 🪙 ${a.reward}</div>
       </div>`;
     ag.appendChild(div);
   });
@@ -4179,21 +4333,21 @@ function showLoot(){
 function renderLoot(){
   const invCrates=S.inventory.filter(i=>i.type==='crate');
   overlay.innerHTML=`<div class="panel" style="max-width:520px">
-    <h1 style="font-size:1.4rem">📦 Kisten</h1>
-    <div style="color:var(--coin);font-weight:700;margin-bottom:10px;font-family:'Orbitron',monospace">🪙 ${S.coins} muntjes</div>
+    <h1 style="font-size:1.4rem">${t('crates')}</h1>
+    <div style="color:var(--coin);font-weight:700;margin-bottom:10px;font-family:'Orbitron',monospace">🪙 ${S.coins} ${t('coins_word')}</div>
     <div class="tabs">
-      <button class="tab ${lootTab==='buy'?'active':''}" onclick="lootTab='buy';renderLoot()">🛒 Kopen</button>
-      <button class="tab ${lootTab==='inv'?'active':''}" onclick="lootTab='inv';renderLoot()">🎒 Inventaris ${invCrates.length>0?'('+invCrates.length+')':''}</button>
-      <button class="tab ${lootTab==='history'?'active':''}" onclick="lootTab='history';renderLoot()">📜 Geschiedenis</button>
+      <button class="tab ${lootTab==='buy'?'active':''}" onclick="lootTab='buy';renderLoot()">${t('loot_buy_tab')}</button>
+      <button class="tab ${lootTab==='inv'?'active':''}" onclick="lootTab='inv';renderLoot()">${t('inventory')} ${invCrates.length>0?'('+invCrates.length+')':''}</button>
+      <button class="tab ${lootTab==='history'?'active':''}" onclick="lootTab='history';renderLoot()">${t('loot_history_tab')}</button>
     </div>
     ${lootTab==='buy'?renderBuyCrates():lootTab==='inv'?renderInventory():renderLootHistory()}
-    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';startMenuLoop();
 }
 function renderLootHistory(){
   if(!S.lootHistory||!S.lootHistory.length)
-    return`<div style="color:#445;text-align:center;padding:20px">Nog geen kisten geopend.<br>Open een kist om je geschiedenis bij te houden!</div>`;
+    return`<div style="color:#445;text-align:center;padding:20px">${t('loot_hist_empty')}</div>`;
   const items=[...S.lootHistory].reverse(); // newest first
   return`<div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
     ${items.map(i=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px">
@@ -4202,7 +4356,7 @@ function renderLootHistory(){
         <div style="font-weight:700;font-size:.88rem">${i.name}</div>
         <div style="font-size:.72rem;color:#556">${i.date}</div>
       </div>
-      <span style="font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(255,255,255,0.08);color:${{common:'#9aaab8',rare:'#4a9eff',epic:'#b94fff',legendary:'#ff9500'}[i.rarity]||'#aaa'}">${{common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'}[i.rarity]||''}</span>
+      <span style="font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(255,255,255,0.08);color:${{common:'#9aaab8',rare:'#4a9eff',epic:'#b94fff',legendary:'#ff9500'}[i.rarity]||'#aaa'}">${{common:t('rar_common'),rare:t('rar_rare'),epic:t('rar_epic'),legendary:t('rar_legendary')}[i.rarity]||''}</span>
     </div>`).join('')}
   </div>`;
 }
@@ -4212,19 +4366,19 @@ function renderBuyCrates(){
     ${Object.entries(CRATE_DEFS).map(([key,def])=>`
     <div class="crate ${key}-crate" onclick="openCrate('${key}')">
       <div class="crate-icon">${def.icon}</div>
-      <div class="crate-name">${def.name}</div>
+      <div class="crate-name">${t('crate_'+key)}</div>
       <div class="crate-price">🪙 ${def.price}</div>
       <div class="crate-odds">${crateOddsText(key)}</div>
-      <div style="margin-top:8px"><button class="btn ${S.coins>=def.price?'orange':'secondary'}" style="padding:6px 14px;font-size:.78rem" ${S.coins<def.price?'disabled':''}>Openen</button></div>
+      <div style="margin-top:8px"><button class="btn ${S.coins>=def.price?'orange':'secondary'}" style="padding:6px 14px;font-size:.78rem" ${S.coins<def.price?'disabled':''}>${t('open_btn')}</button></div>
     </div>`).join('')}
   </div>
-  <div style="font-size:.78rem;color:#445;margin-top:8px">Kisten bevatten exclusieve batjes, velden en muntjes die je niet in de winkel kunt kopen.</div>`;
+  <div style="font-size:.78rem;color:#445;margin-top:8px">${t('loot_footer')}</div>`;
 }
 
 function crateOddsText(key){
   const pools=CRATE_DEFS[key].pools;
   return pools.map(p=>{
-    const n={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'}[p.rarity];
+    const n={common:t('rar_common'),rare:t('rar_rare'),epic:t('rar_epic'),legendary:t('rar_legendary')}[p.rarity];
     const total=pools.reduce((a,b)=>a+b.weight,0);
     return`${n}: ${Math.round(p.weight/total*100)}%`;
   }).join(' · ');
@@ -4232,14 +4386,14 @@ function crateOddsText(key){
 
 function renderInventory(){
   const invCrates=S.inventory.filter(i=>i.type==='crate');
-  if(!invCrates.length)return`<div style="color:#445;text-align:center;padding:20px">Je hebt nog geen kisten in je inventaris.<br>Speel het Smash Seizoen om gratis kisten te verdienen!</div>`;
+  if(!invCrates.length)return`<div style="color:#445;text-align:center;padding:20px">${t('loot_inv_empty')}</div>`;
   return`<div class="crate-grid">${invCrates.map(inv=>{
     const def=CRATE_DEFS[inv.rarity];
     return`<div class="crate ${inv.rarity}-crate">
       <div class="crate-icon">${def.icon}</div>
-      <div class="crate-name">${def.name}</div>
+      <div class="crate-name">${t('crate_'+inv.rarity)}</div>
       <div class="crate-odds">${crateOddsText(inv.rarity)}</div>
-      <div style="margin-top:8px"><button class="btn orange" style="padding:6px 14px;font-size:.78rem" onclick="openInventoryCrate('${inv.id}')">Openen!</button></div>
+      <div style="margin-top:8px"><button class="btn orange" style="padding:6px 14px;font-size:.78rem" onclick="openInventoryCrate('${inv.id}')">${t('open_excl')}</button></div>
     </div>`;}).join('')}</div>`;
 }
 
@@ -4249,29 +4403,31 @@ function showProfile(){
   const map=MAPS.find(m=>m.id===S.activeMap)||MAPS[0];
   const ballSkin=BALL_SKINS.find(b=>b.id===S.activeBallSkin)||BALL_SKINS[0];
   const achCount=Object.keys(S.achievements).length;
-  const titlesHtml=TITLES.map(t=>{
-    const unlocked=t.check();
-    const active=S.activeTitle===t.id;
-    return`<div ${unlocked?`onclick="setActiveTitle('${t.id}')"`:''} style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;margin:4px 0;border:1px solid ${active?'rgba(255,215,0,0.5)':'rgba(255,255,255,0.1)'};background:rgba(255,255,255,${unlocked?'0.05':'0.02'});cursor:${unlocked?'pointer':'default'};opacity:${unlocked?'1':'0.45'}">
-      <span style="font-weight:700;font-size:.88rem;color:${active?'#ffd700':unlocked?'#c8ffe8':'#667'}">${active?'👑 ':''}${t.name}</span>
-      <span style="font-size:.72rem;color:#556;text-align:right">${unlocked?(active?'Actief':'Klik om te kiezen'):'🔒 '+t.unlock}</span>
+  const titlesHtml=TITLES.map(ti=>{
+    const unlocked=ti.check();
+    const active=S.activeTitle===ti.id;
+    const tn=t('ttl_'+ti.id),tu=t('ttlu_'+ti.id);
+    const nm=tn===('ttl_'+ti.id)?ti.name:tn,ul=tu===('ttlu_'+ti.id)?ti.unlock:tu;
+    return`<div ${unlocked?`onclick="setActiveTitle('${ti.id}')"`:''} style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;margin:4px 0;border:1px solid ${active?'rgba(255,215,0,0.5)':'rgba(255,255,255,0.1)'};background:rgba(255,255,255,${unlocked?'0.05':'0.02'});cursor:${unlocked?'pointer':'default'};opacity:${unlocked?'1':'0.45'}">
+      <span style="font-weight:700;font-size:.88rem;color:${active?'#ffd700':unlocked?'#c8ffe8':'#667'}">${active?'👑 ':''}${nm}</span>
+      <span style="font-size:.72rem;color:#556;text-align:right">${unlocked?(active?t('active_lbl'):t('click_choose')):'🔒 '+ul}</span>
     </div>`;
   }).join('');
   overlay.innerHTML=`<div class="panel" style="max-width:460px">
-    <h1 style="font-size:1.4rem">\u{1F464} Profiel</h1>
+    <h1 style="font-size:1.4rem">${t('profile')}</h1>
     ${S.activeTitle?`<div style="color:#ffd700;font-weight:700;font-size:.95rem">👑 ${getTitleName(S.activeTitle)}</div>`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">
-      ${statCard('\u2B50','Level',S.level)}
-      ${statCard('\u{1F31F}','Prestige',S.prestige)}
-      ${statCard('\u{1F3C6}','Beste Score',S.best)}
-      ${statCard('\u{1F525}','Beste Combo',S.stats.bestCombo||0)}
-      ${statCard('\u{1F3D3}','Totale Treffers',S.stats.totalHits)}
-      ${statCard('\u{1F3AE}','Potjes Gespeeld',S.stats.gamesPlayed)}
-      ${statCard('\u{1FA99}','Totale Muntjes',S.stats.totalCoins)}
-      ${statCard('\u{1F3C5}','Prestaties',achCount+' / '+ACHIEVEMENTS.length)}
+      ${statCard('⭐',t('level_lbl'),S.level)}
+      ${statCard('🌟',t('prestige_lbl'),S.prestige)}
+      ${statCard('🏆',t('best_score'),S.best)}
+      ${statCard('🔥',t('best_combo'),S.stats.bestCombo||0)}
+      ${statCard('🏓',t('total_hits'),S.stats.totalHits)}
+      ${statCard('🎮',t('games_played'),S.stats.gamesPlayed)}
+      ${statCard('🪙',t('total_coins'),S.stats.totalCoins)}
+      ${statCard('🏅',t('ach_count_lbl'),achCount+' / '+ACHIEVEMENTS.length)}
     </div>
     <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(0,255,153,0.15);border-radius:10px;padding:12px;margin-bottom:12px">
-      <div style="font-size:.75rem;color:#556;margin-bottom:8px;font-weight:700">ACTIEVE COSMETICS</div>
+      <div style="font-size:.75rem;color:#556;margin-bottom:8px;font-weight:700">${t('active_cosmetics')}</div>
       <div style="display:flex;gap:16px;justify-content:center;font-size:.88rem">
         <span>${bat.emoji} ${bat.name}</span>
         <span>${map.emoji} ${map.name}</span>
@@ -4279,7 +4435,7 @@ function showProfile(){
       </div>
     </div>
     <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px;padding:12px;margin-bottom:12px;max-height:220px;overflow-y:auto">
-      <div style="font-size:.75rem;color:#556;margin-bottom:8px;font-weight:700;text-align:left">\ud83d\udc51 TITELS</div>
+      <div style="font-size:.75rem;color:#556;margin-bottom:8px;font-weight:700;text-align:left">${t('titles_hdr')}</div>
       ${titlesHtml}
     </div>
     <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showMenu)">\u2190 Terug</button></div>
@@ -4489,13 +4645,13 @@ function showChallenges(){
   const weeklyDone=S.weeklyChallenges.filter(c=>c.done).length;
   const statNow={gameHits,gameScore,gameCoins,gameCombo,powerupsUsed,goldenHit,dailyGames,scoreNoPowerup,totalHits:S.stats.totalHits};
   overlay.innerHTML=`<div class="panel" style="max-width:520px">
-    <h1 style="font-size:1.4rem">📅 Uitdagingen</h1>
+    <h1 style="font-size:1.4rem">${t('challenges_title')}</h1>
     <div class="tabs">
-      <button class="tab ${challengeTab==='daily'?'active':''}" onclick="challengeTab='daily';showChallenges()">📅 Dagelijks (${dailyDone}/3)</button>
-      <button class="tab ${challengeTab==='weekly'?'active':''}" onclick="challengeTab='weekly';showChallenges()">📆 Wekelijks (${weeklyDone}/2)</button>
+      <button class="tab ${challengeTab==='daily'?'active':''}" onclick="challengeTab='daily';showChallenges()">${t('daily')} (${dailyDone}/3)</button>
+      <button class="tab ${challengeTab==='weekly'?'active':''}" onclick="challengeTab='weekly';showChallenges()">${t('weekly_tab')} (${weeklyDone}/2)</button>
     </div>
     <div class="ach-grid" id="cg"></div>
-    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
   const cg=document.getElementById('cg');
@@ -4507,10 +4663,10 @@ function showChallenges(){
       div.className='ach-card'+(ch.done?' done':'');
       div.innerHTML=`<div class="ach-icon">${ch.done?'✅':'📋'}</div>
         <div style="flex:1">
-          <div class="ach-name" style="font-size:.9rem">${ch.desc}</div>
+          <div class="ach-name" style="font-size:.9rem">${chDescTxt(ch)}</div>
           ${!ch.done?`<div class="ach-prog">${prog} / ${ch.target}</div>
           <div class="ach-prog-bar"><div class="ach-prog-fill" style="width:${pct}%"></div></div>`:''}
-          <div class="ach-prog" style="margin-top:3px;color:var(--coin)">Beloning: 🪙 ${ch.reward}</div>
+          <div class="ach-prog" style="margin-top:3px;color:var(--coin)">${t('reward')}: 🪙 ${ch.reward}</div>
         </div>`;
       cg.appendChild(div);
     });
@@ -4522,10 +4678,10 @@ function showChallenges(){
       div.className='ach-card'+(ch.done?' done':'');
       div.innerHTML=`<div class="ach-icon">${ch.done?'✅':'📆'}</div>
         <div style="flex:1">
-          <div class="ach-name" style="font-size:.9rem">${ch.desc}</div>
+          <div class="ach-name" style="font-size:.9rem">${chDescTxt(ch)}</div>
           ${!ch.done?`<div class="ach-prog">${prog} / ${ch.target}</div>
           <div class="ach-prog-bar"><div class="ach-prog-fill" style="width:${pct}%"></div></div>`:''}
-          <div class="ach-prog" style="margin-top:3px;color:var(--coin);font-weight:700">Beloning: 🪙 ${ch.reward}</div>
+          <div class="ach-prog" style="margin-top:3px;color:var(--coin);font-weight:700">${t('reward')}: 🪙 ${ch.reward}</div>
         </div>`;
       cg.appendChild(div);
     });
@@ -4548,27 +4704,26 @@ function showStats(){
   const avgScore=S.stats.gamesPlayed>0?Math.round((S.stats.totalScore||0)/S.stats.gamesPlayed):0;
   const winRate=S.stats.gamesPlayed>0?Math.round(((S.stats.wins||0)/S.stats.gamesPlayed)*100):0;
   overlay.innerHTML=`<div class="panel" style="max-width:480px">
-    <h1 style="font-size:1.4rem">📊 Statistieken</h1>
+    <h1 style="font-size:1.4rem">${t('stats')}</h1>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
-      ${statCard('🏓','Totale Treffers',S.stats.totalHits)}
-      ${statCard('🎮','Potjes Gespeeld',S.stats.gamesPlayed)}
-      ${statCard('🏆','Beste Score',S.stats.bestScore)}
-      ${statCard('🔥','Beste Combo',S.stats.bestCombo||0)}
-      ${statCard('🪙','Totale Muntjes',S.stats.totalCoins)}
-      ${statCard('📦','Kisten Geopend',S.stats.cratesOpened)}
-      ${statCard('⭐','Level',S.level)}
-      ${statCard('🌠','Legendarisch',S.stats.legendaryFound)}
-      ${statCard('📈','Gemiddelde Score',avgScore)}
-      ${statCard('🏅','Win Rate',winRate+'%')}
-      ${statCard('🌪️','Survival Record',S.stats.survivalBest||0)}
-      ${statCard('✨','Perfecte Treffers',S.stats.perfectHits||0)}
-      ${statCard('⚔️','Bosses Verslagen',S.stats.bossDefeated||0)}
-      ${statCard('❓','Mystery Ballen',S.stats.mysteryHit||0)}
-      ${statCard('🧘','Zen Potjes',S.stats.zenGames||0)}
+      ${statCard('🏓',t('total_hits'),S.stats.totalHits)}
+      ${statCard('🎮',t('games_played'),S.stats.gamesPlayed)}
+      ${statCard('🏆',t('best_score'),S.stats.bestScore)}
+      ${statCard('🔥',t('best_combo'),S.stats.bestCombo||0)}
+      ${statCard('🪙',t('total_coins'),S.stats.totalCoins)}
+      ${statCard('📦',t('crates_opened'),S.stats.cratesOpened)}
+      ${statCard('⭐',t('level_lbl'),S.level)}
+      ${statCard('🌠',t('legendary_found'),S.stats.legendaryFound)}
+      ${statCard('📈',t('avg_score'),avgScore)}
+      ${statCard('🏅',t('win_rate'),winRate+'%')}
+      ${statCard('✨',t('perfect_hits'),S.stats.perfectHits||0)}
+      ${statCard('⚔️',t('bosses_defeated'),S.stats.bossDefeated||0)}
+      ${statCard('❓',t('mystery_balls'),S.stats.mysteryHit||0)}
+      ${statCard('🎯',t('games_total'),S.stats.gamesPlayed)}
     </div>
     <div class="btnrow">
       <button class="btn purple" onclick="switchPanel(showHallOfFame)">🏛️ Hall of Fame</button>
-      <button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button>
+      <button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button>
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -4581,18 +4736,18 @@ function showHallOfFame(){
   gameState='halloffame';startMenuLoop();
   overlay.innerHTML=`<div class="panel" style="max-width:480px">
     <h1 style="font-size:1.4rem">🏛️ Hall of Fame</h1>
-    <p class="subtitle">Jouw allerbeste records!</p>
+    <p class="subtitle">${t('hof_sub')}</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
-      ${statCard('🏆','Beste Score',S.stats.bestScore)}
-      ${statCard('🔥','Beste Combo',S.stats.bestCombo||0)}
-      ${statCard('⭐','Hoogste Level ooit',S.stats.maxLevelReached||S.level)}
-      ${statCard('🌟','Prestige',S.prestige)}
-      ${statCard('💰','Meeste muntjes in één potje',S.stats.bestGameCoins||0)}
-      ${statCard('📅','Login streak record',S.stats.bestLoginStreak||0)}
-      ${statCard('🎮','Potjes totaal',S.stats.gamesPlayed)}
-      ${statCard('📦','Kisten geopend',S.stats.cratesOpened)}
+      ${statCard('🏆',t('best_score'),S.stats.bestScore)}
+      ${statCard('🔥',t('best_combo'),S.stats.bestCombo||0)}
+      ${statCard('⭐',t('highest_level'),S.stats.maxLevelReached||S.level)}
+      ${statCard('🌟',t('prestige_lbl'),S.prestige)}
+      ${statCard('💰',t('most_coins_game'),S.stats.bestGameCoins||0)}
+      ${statCard('📅',t('login_record'),S.stats.bestLoginStreak||0)}
+      ${statCard('🎮',t('games_total'),S.stats.gamesPlayed)}
+      ${statCard('📦',t('crates_opened'),S.stats.cratesOpened)}
     </div>
-    <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showStats)">← Terug</button></div>
+    <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showStats)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
 }
@@ -4608,11 +4763,11 @@ function showTopScores(){
       <span style="font-family:'Orbitron',monospace;font-size:1.1rem;color:${i===0?'var(--accent)':'#ccc'}">${s.score}</span>
       <span style="font-size:.8rem;color:#556">${s.date}</span>
     </div>`
-  ).join(''):'<div style="color:#445;padding:20px">Nog geen scores!</div>';
+  ).join(''):`<div style="color:#445;padding:20px">${t('no_scores')}</div>`;
   overlay.innerHTML=`<div class="panel" style="max-width:420px">
-    <h1 style="font-size:1.4rem">🏅 Top 5 Scores</h1>
+    <h1 style="font-size:1.4rem">${t('top5')}</h1>
     <div style="margin:14px 0">${rows}</div>
-    <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
+    <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
   startMenuLoop();
@@ -4626,19 +4781,19 @@ function showPrestige(){
   overlay.innerHTML=`<div class="panel" style="max-width:440px">
     <div style="font-size:2.5rem">🌟</div>
     <h1 style="font-size:1.4rem">Prestige</h1>
-    <p class="subtitle">Je hebt level 20 bereikt! Doe prestige om opnieuw te beginnen met een permanente bonus.</p>
+    <p class="subtitle">${t('prestige_sub')}</p>
     <div style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:14px;margin:12px 0">
-      <div style="font-size:.9rem;font-weight:700;color:#ffd700">Prestige ${S.prestige+1} Beloningen:</div>
+      <div style="font-size:.9rem;font-weight:700;color:#ffd700">${t('prestige_rewards').replace('{n}',S.prestige+1)}</div>
       <div style="font-size:.85rem;color:#aaa;margin-top:6px">
         ✅ Prestige badge ⭐×${S.prestige+1}<br>
-        ✅ +${Math.round((S.prestige+1)*25)}% permanente muntjes bonus<br>
-        ✅ 100 muntjes startbonus
+        ✅ ${t('prestige_r2').replace('{n}',Math.round((S.prestige+1)*25))}<br>
+        ✅ ${t('prestige_r3')}
       </div>
-      <div style="font-size:.8rem;color:#664;margin-top:8px">⚠️ Level wordt gereset naar 1 · XP wordt gewist · Items blijven behouden</div>
+      <div style="font-size:.8rem;color:#664;margin-top:8px">${t('prestige_warn')}</div>
     </div>
     <div class="btnrow">
-      <button class="btn gold" onclick="doPrestige()">🌟 Prestige doen!</button>
-      <button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button>
+      <button class="btn gold" onclick="doPrestige()">${t('prestige_do')}</button>
+      <button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button>
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -4676,7 +4831,7 @@ function checkLoginStreak(){
   saveState();
   checkAchievement('loginStreak',S.loginStreak);
   setTimeout(()=>{
-    showToast(`🔥 <strong>Dag ${S.loginStreak} streak!</strong> +${bonus} muntjes bonus!`,'lvl-toast',4000);
+    showToast(t('streak_toast').replace('{d}',S.loginStreak).replace('{b}',bonus),'lvl-toast',4000);
   },1500);
 }
 
@@ -4684,14 +4839,14 @@ function checkLoginStreak(){
 //  GELUKRAD (DAILY LUCKY WHEEL)
 // ══════════════════════════════════════════════════════════════════════════════
 const WHEEL_PRIZES=[
-  {label:'5 🪙',color:'#16a34a',award:()=>{S.coins+=5;S.stats.totalCoins+=5;coinUiEl.textContent=S.coins;playCoin();return'+5 muntjes!';}},
-  {label:'10 🪙',color:'#0891b2',award:()=>{S.coins+=10;S.stats.totalCoins+=10;coinUiEl.textContent=S.coins;playCoin();return'+10 muntjes!';}},
-  {label:'25 🪙',color:'#7c3aed',award:()=>{S.coins+=25;S.stats.totalCoins+=25;coinUiEl.textContent=S.coins;playCoin();return'+25 muntjes!';}},
-  {label:'50 🪙',color:'#d97706',award:()=>{S.coins+=50;S.stats.totalCoins+=50;coinUiEl.textContent=S.coins;playCoin();return'+50 muntjes!';}},
-  {label:'+50 XP',color:'#2563eb',award:()=>{addXP(50);return'XP-boost: +50 XP!';}},
-  {label:'📦 Kist',color:'#dc2626',award:()=>{S.inventory.push({type:'crate',rarity:'common',id:'wheel_'+Date.now()});return'Gratis gewone kist! Open hem bij 📦 Kisten.';}},
-  {label:'🎁 Kist',color:'#db2777',award:()=>{S.inventory.push({type:'crate',rarity:'rare',id:'wheel_'+Date.now()});return'Gratis zeldzame kist! Open hem bij 📦 Kisten.';}},
-  {label:'Niets 😢',color:'#475569',award:()=>'Helaas, vandaag niets... probeer morgen opnieuw!'},
+  {label:'5 🪙',color:'#16a34a',award:()=>{S.coins+=5;S.stats.totalCoins+=5;coinUiEl.textContent=S.coins;playCoin();return t('wheel_coins').replace('{n}',5);}},
+  {label:'10 🪙',color:'#0891b2',award:()=>{S.coins+=10;S.stats.totalCoins+=10;coinUiEl.textContent=S.coins;playCoin();return t('wheel_coins').replace('{n}',10);}},
+  {label:'25 🪙',color:'#7c3aed',award:()=>{S.coins+=25;S.stats.totalCoins+=25;coinUiEl.textContent=S.coins;playCoin();return t('wheel_coins').replace('{n}',25);}},
+  {label:'50 🪙',color:'#d97706',award:()=>{S.coins+=50;S.stats.totalCoins+=50;coinUiEl.textContent=S.coins;playCoin();return t('wheel_coins').replace('{n}',50);}},
+  {label:'+50 XP',color:'#2563eb',award:()=>{addXP(50);return t('wheel_xp');}},
+  {label:'📦 Kist',color:'#dc2626',award:()=>{S.inventory.push({type:'crate',rarity:'common',id:'wheel_'+Date.now()});return t('wheel_crate_common');}},
+  {label:'🎁 Kist',color:'#db2777',award:()=>{S.inventory.push({type:'crate',rarity:'rare',id:'wheel_'+Date.now()});return t('wheel_crate_rare');}},
+  {label:'Niets 😢',color:'#475569',award:()=>t('wheel_nothing')},
 ];
 let wheelSpinning=false,wheelAngle=0;
 function timeUntilMidnight(){
@@ -4705,16 +4860,16 @@ function showWheel(){
   wheelSpinning=false;wheelAngle=0;
   const spunToday=S.lastWheelDate===getTodayStr();
   overlay.innerHTML=`<div class="panel" style="max-width:420px">
-    <h1 style="font-size:1.4rem">🎡 Gelukrad</h1>
-    <p class="subtitle">Draai elke dag gratis voor een prijs!</p>
+    <h1 style="font-size:1.4rem">${t('wheel')}</h1>
+    <p class="subtitle">${t('wheel_sub')}</p>
     <div style="position:relative;width:280px;height:288px;margin:6px auto">
       <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:1.5rem;z-index:2;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))">🔻</div>
       <canvas id="wheelCanvas" width="280" height="280" style="display:block"></canvas>
     </div>
-    <div id="wheelMsg" style="min-height:22px;font-size:.85rem;color:${spunToday?'#889':'#00ff99'};font-weight:700;margin:6px 0">${spunToday?'Kom morgen terug! ⏳ Nog '+timeUntilMidnight():'Je gratis draai staat klaar!'}</div>
+    <div id="wheelMsg" style="min-height:22px;font-size:.85rem;color:${spunToday?'#889':'#00ff99'};font-weight:700;margin:6px 0">${spunToday?t('wheel_back')+' ⏳ '+timeUntilMidnight():t('wheel_ready')}</div>
     <div class="btnrow">
-      <button id="wheelBtn" class="btn gold" onclick="spinWheel()" ${spunToday?'disabled':''}>${spunToday?'⏳ Morgen weer!':'🎡 Draai!'}</button>
-      <button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button>
+      <button id="wheelBtn" class="btn gold" onclick="spinWheel()" ${spunToday?'disabled':''}>${spunToday?t('wheel_tomorrow'):t('wheel_spin')}</button>
+      <button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button>
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -4745,7 +4900,7 @@ function drawWheel(angle){
 }
 function spinWheel(){
   if(wheelSpinning)return;
-  if(S.lastWheelDate===getTodayStr()){showToast('⏳ Je hebt vandaag al gedraaid!');return;}
+  if(S.lastWheelDate===getTodayStr()){showToast(t('wheel_already'));return;}
   initAudio();
   wheelSpinning=true;
   S.lastWheelDate=getTodayStr();saveState();
