@@ -2113,13 +2113,13 @@ function milestoneConfetti(){
 }
 function checkHitMilestone(){
   if(HIT_MILESTONES.includes(S.stats.totalHits)){
-    showToast(`🎉 Mijlpaal: ${S.stats.totalHits} ballen geslagen!`,'ach-toast',4500);
+    showToast(t('toast_milestone_hits').replace('{n}',S.stats.totalHits),'ach-toast',4500);
     milestoneConfetti();
   }
 }
 function checkGamesMilestone(){
   if(GAME_MILESTONES.includes(S.stats.gamesPlayed)){
-    showToast(`🎮 Mijlpaal: ${S.stats.gamesPlayed} potjes gespeeld!`,'ach-toast',4500);
+    showToast(t('toast_milestone_games').replace('{n}',S.stats.gamesPlayed),'ach-toast',4500);
     milestoneConfetti();
   }
 }
@@ -2135,7 +2135,7 @@ function breakPiggyBank(){
   coinUiEl.textContent=S.coins;
   if(typeof playCoin==='function')playCoin();
   saveState();
-  showToast(`🐷💥 Spaarpot gebroken: +${amt} 🪙`,'lvl-toast',4000);
+  showToast(t('toast_piggy').replace('{n}',amt),'lvl-toast',4000);
   renderShop();
 }
 
@@ -2188,7 +2188,7 @@ function addXP(amount){
     showToast(t('lvl_toast').replace('{n}',S.level),'lvl-toast');
     checkBPRewards();
   if([5,10,15,20].includes(S.level)){
-    S.inventory.push({type:'crate',id:'milestone_crate',name:'Mijlpaal Kist',rarity:'rare'});
+    S.inventory.push({type:'crate',id:'milestone_crate',name:'Milestone Crate',rarity:'rare'});
     showToast(t('milestone_toast'),'ach-toast',4000);
     playAchievement();
   }
@@ -2229,7 +2229,7 @@ function checkAchievement(statKey,value){
       S.coins+=a.reward;
       S.stats.totalCoins+=a.reward;
       coinUiEl.textContent=S.coins;
-      showToast(`${a.icon} <strong>Prestatie!</strong> ${a.name}<br><small>+${a.reward} muntjes</small>`,'ach-toast',4000);
+      showToast(`${a.icon} <strong>${t('toast_ach')}</strong> ${achNameTxt(a)}<br><small>+${a.reward} ${t('toast_coins_sm')}</small>`,'ach-toast',4000);
       playAchievement();
       showAchievementPopup(a);
       if(gameState==='playing'){
@@ -2413,8 +2413,8 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
   }
 
   overlay.innerHTML=`<div class="panel" style="max-width:460px;text-align:center">
-    <h1 style="font-size:1.2rem;margin-bottom:4px">${def.icon} ${def.name} Geopend!</h1>
-    <p style="color:#556;font-size:.8rem;margin-bottom:8px">Wat zit erin...</p>
+    <h1 style="font-size:1.2rem;margin-bottom:4px">${def.icon} ${t('crate_'+rarityKey)} ${t('crate_opened')}</h1>
+    <p style="color:#556;font-size:.8rem;margin-bottom:8px">${t('crate_peek')}</p>
     <div class="crate-reel-wrap" id="crateReelWrap">
       <div class="crate-reel" id="crateReel">
         ${reelItems.map((item,i)=>`<div class="reel-item${item.isWinner?' winner':''}" data-idx="${i}">${item.emoji}</div>`).join('')}
@@ -2428,9 +2428,9 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
       <div style="font-weight:700;font-size:1rem;color:${rarityColors[itemRarity]||'#fff'};margin-top:4px">${rarityNames[itemRarity]} — ${name}</div>
     </div>
     <div id="reelBtns" class="btnrow" style="margin-top:12px;opacity:0;transition:opacity 0.4s">
-      ${equipAction?`<button class="btn" onclick="${equipAction}">✨ Uitrusten</button>`:''}
+      ${equipAction?`<button class="btn" onclick="${equipAction}">${t('equip_item')}</button>`:''}
       <button class="btn secondary" onclick="showLoot()">${t('another_crate')}</button>
-      <button class="btn secondary" onclick="showMenu()">← Menu</button>
+      <button class="btn secondary" onclick="showMenu()">${t('menu_btn')}</button>
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -2822,13 +2822,127 @@ const TRANSLATIONS={
   milestone_toast:{en:'🎁 <strong>Milestone reached! Free crate received!</strong>',nl:'🎁 <strong>Mijlpaal bereikt! Gratis kist ontvangen!</strong>',de:'🎁 <strong>Meilenstein erreicht! Gratis-Kiste erhalten!</strong>',fr:'🎁 <strong>Palier atteint ! Caisse gratuite reçue !</strong>',es:'🎁 <strong>¡Hito alcanzado! ¡Caja gratis!</strong>',zh:'🎁 <strong>达成里程碑！获得免费箱子！</strong>',ru:'🎁 <strong>Рубеж достигнут! Бесплатный ящик!</strong>'},
   two_balls:{en:'2 BALLS!',nl:t('two_balls'),de:'2 BÄLLE!',fr:'2 BALLES !',es:'¡2 BOLAS!',zh:'两个球！',ru:'2 МЯЧА!'},
   shield_absorbed:{en:'🛡️ Shield absorbed!',nl:'🛡️ Schild geabsorbeerd!',de:'🛡️ Schild absorbiert!',fr:'🛡️ Bouclier absorbé !',es:'🛡️ ¡Escudo absorbido!',zh:'🛡️ 护盾抵消！',ru:'🛡️ Щит поглотил удар!'},
-};
-function t(key){
+  an_first_hit:{en:'First Hit',nl:'Eerste Slag',de:'Erster Treffer',fr:'Premier coup',es:'Primer golpe',zh:'首次击球',ru:'Первый удар'},
+  an_hits_50:{en:'Half Hundred',nl:'Halve Honderd',de:'Halbes Hundert',fr:'Demi-centaine',es:'Medio centenar',zh:'50次击球',ru:'50 ударов'},
+  an_hits_200:{en:'Ball Cannon',nl:'Ballenkanon',de:'Ballkanone',fr:'Canon à balles',es:'Cañón de bolas',zh:'球炮',ru:'Пушка'},
+  an_hits_1000:{en:'Ping Pong Machine',nl:'Tafeltennis Machine',de:'Tischtennismaschine',fr:'Machine à tennis de table',es:'Máquina ping pong',zh:'乒乓机器',ru:'Пинг-понг машина'},
+  an_score_10:{en:'Beginner',nl:'Beginner',de:'Anfänger',fr:'Débutant',es:'Principiante',zh:'初学者',ru:'Начинающий'},
+  an_score_25:{en:'Advanced',nl:'Gevorderd',de:'Fortgeschritten',fr:'Avancé',es:'Avanzado',zh:'进阶',ru:'Продвинутый'},
+  an_score_50:{en:'Expert',nl:'Expert',de:'Experte',fr:'Expert',es:'Experto',zh:'专家',ru:'Эксперт'},
+  an_score_100:{en:'Master',nl:'Meester',de:'Meister',fr:'Maître',es:'Maestro',zh:'大师',ru:'Мастер'},
+  an_score_200:{en:'Legend',nl:'Legende',de:'Legende',fr:'Légende',es:'Leyenda',zh:'传奇',ru:'Легенда'},
+  an_games_10:{en:'Persistent',nl:'Doorzetter',de:'Ausdauernd',fr:'Persistant',es:'Persistente',zh:'坚持不懈',ru:'Настойчивый'},
+  an_games_50:{en:'Addicted',nl:'Verslaafde',de:'Süchtig',fr:'Accro',es:'Adicto',zh:'上瘾了',ru:'Зависимый'},
+  an_games_100:{en:'Veteran',nl:'Veteraan',de:'Veteran',fr:'Vétéran',es:'Veterano',zh:'老兵',ru:'Ветеран'},
+  an_coins_100:{en:'Piggy Bank',nl:'Spaarpot',de:'Sparschwein',fr:'Tirelire',es:'Alcancía',zh:'存钱罐',ru:'Копилка'},
+  an_coins_500:{en:'Rich',nl:'Rijkaard',de:'Reicher',fr:'Riche',es:'Rico',zh:'有钱人',ru:'Богач'},
+  an_lvl_5:{en:'Getting Steam',nl:'Op Stoom',de:'In Fahrt',fr:'En route',es:'Cogiendo ritmo',zh:'起步阶段',ru:'Набираю скорость'},
+  an_lvl_10:{en:'Halfway',nl:'Halverwege',de:'Halbzeit',fr:'À mi-chemin',es:'A mitad',zh:'到一半了',ru:'На полпути'},
+  an_lvl_20:{en:'Smash Season Max',nl:'Smash Seizoen Max',de:'Smash Season Max',fr:'Saison Smash Max',es:'Temporada Smash Máx',zh:'赛季满级',ru:'Макс уровень сезона'},
+  an_all_bats:{en:'Paddle Collector',nl:'Bat Verzamelaar',de:'Schlägersammler',fr:'Collectionneur de raquettes',es:'Coleccionista de palas',zh:'球拍收藏家',ru:'Коллекционер ракеток'},
+  an_all_maps:{en:'World Traveler',nl:'Wereld-Reiziger',de:'Weltreisender',fr:'Voyageur mondial',es:'Viajero mundial',zh:'环游世界',ru:'Путешественник'},
+  an_crates_10:{en:'Crate Opener',nl:'Kisten Opener',de:'Kistenöffner',fr:'Ouvreur de caisses',es:'Abridor de cajas',zh:'开箱达人',ru:'Открыватель ящиков'},
+  an_legendary_get:{en:'Mythic!',nl:'Mythisch!',de:'Mythisch!',fr:'Mythique !',es:'¡Mítico!',zh:'神话级！',ru:'Мифический!'},
+  an_powerup_first:{en:'Charged Up!',nl:'Opgeladen!',de:'Aufgeladen!',fr:'Chargé !',es:'¡Cargado!',zh:'充能完毕！',ru:'Заряжен!'},
+  an_powerup_10:{en:'Power Junkie',nl:'Power Junkie',de:'Power-Junkie',fr:'Accro au pouvoir',es:'Adicto al poder',zh:'力量狂热者',ru:'Любитель усилений'},
+  an_bomb_survive:{en:'Bomb Expert',nl:'Bommenexpert',de:'Bombenexperte',fr:'Expert en bombes',es:'Experto en bombas',zh:'炸弹专家',ru:'Эксперт бомб'},
+  an_golden_hit:{en:'Gold Fever',nl:'Goudkoorts',de:'Goldfieber',fr:"Fièvre de l'or",es:'Fiebre del oro',zh:'黄金热',ru:'Золотая лихорадка'},
+  an_streak_3:{en:'On a Roll',nl:'Op Stoom',de:'Auf der Welle',fr:'En forme',es:'En racha',zh:'连续登录',ru:'В ударе'},
+  an_streak_7:{en:'Week Champion',nl:'Weekkampioen',de:'Wochensieger',fr:'Champion de la semaine',es:'Campeón semanal',zh:'本周冠军',ru:'Чемпион недели'},
+  an_prestige_1:{en:'Reborn',nl:'Herboren',de:'Wiedergeboren',fr:'Renaît',es:'Renacido',zh:'重生',ru:'Возрождённый'},
+  an_daily_5:{en:'Daily Hero',nl:'Dagelijkse Held',de:'Täglicher Held',fr:'Héros quotidien',es:'Héroe diario',zh:'每日英雄',ru:'Ежедневный герой'},
+  an_multiball:{en:'Circus Act',nl:'Circusact',de:'Zirkusnummer',fr:'Numéro de cirque',es:'Número de circo',zh:'马戏表演',ru:'Цирковой номер'},
+  an_top_score:{en:'Record Breaker',nl:'Recordbreker',de:'Rekordbrecher',fr:'Briseur de record',es:'Rompe récords',zh:'破纪录者',ru:'Рекордсмен'},
+  an_hits500:{en:'500 Hits',nl:'500 Treffers',de:'500 Treffer',fr:'500 coups',es:'500 golpes',zh:'500次击球',ru:'500 ударов'},
+  an_hits1000:{en:'1000 Hits',nl:'1000 Treffers',de:'1000 Treffer',fr:'1000 coups',es:'1000 golpes',zh:'1000次击球',ru:'1000 ударов'},
+  an_games25:{en:'25 Games',nl:'25 Potjes',de:'25 Spiele',fr:'25 parties',es:'25 partidas',zh:'25局',ru:'25 игр'},
+  an_games50:{en:'50 Games',nl:'50 Potjes',de:'50 Spiele',fr:'50 parties',es:'50 partidas',zh:'50局',ru:'50 игр'},
+  an_score50:{en:'Score 50',nl:'Score 50',de:'Punktzahl 50',fr:'Score 50',es:'Puntuación 50',zh:'得分50',ru:'Счёт 50'},
+  an_score100:{en:'Score 100',nl:'Score 100',de:'Punktzahl 100',fr:'Score 100',es:'Puntuación 100',zh:'得分100',ru:'Счёт 100'},
+  an_coins500:{en:'500 Coins',nl:'500 Muntjes',de:'500 Münzen',fr:'500 pièces',es:'500 monedas',zh:'500金币',ru:'500 монет'},
+  an_coins2000:{en:'2000 Coins',nl:'2000 Muntjes',de:'2000 Münzen',fr:'2000 pièces',es:'2000 monedas',zh:'2000金币',ru:'2000 монет'},
+  an_level15:{en:'Level 15',nl:'Level 15',de:'Level 15',fr:'Niveau 15',es:'Nivel 15',zh:'第15级',ru:'Уровень 15'},
+  an_level30:{en:'Level 30 — God',nl:'Level 30 — God',de:'Level 30 — Gott',fr:'Niveau 30 — Dieu',es:'Nivel 30 — Dios',zh:'30级 — 神',ru:'Уровень 30 — Бог'},
+  an_boss_5:{en:'Boss Slayer',nl:'Boss Slayer',de:'Bossbesieger',fr:'Tueur de boss',es:'Asesino de jefes',zh:'杀魔高手',ru:'Убийца боссов'},
+  an_mystery_10:{en:'Mystery Hunter',nl:'Mysterie Jager',de:'Rätseljäger',fr:'Chasseur de mystères',es:'Cazador de misterios',zh:'神秘猎人',ru:'Охотник за тайнами'},
+  an_frenzy_3:{en:'Frenzy Fanatic',nl:'Frenzy Fanaat',de:'Frenzyfanatiker',fr:'Fana du frenzy',es:'Fanático del frenzy',zh:'狂热分子',ru:'Фанат фреза'},
+  an_perfect_25:{en:'Precision King',nl:'Precisie Koning',de:'Präzisionskönig',fr:'Roi de la précision',es:'Rey de la precisión',zh:'精准之王',ru:'Король точности'},
+  bat_classic:{en:'Classic',nl:'Klassiek',de:'Klassisch',fr:'Classique',es:'Clásico',zh:'经典',ru:'Классический'},
+  bat_neon:{en:'Neon',nl:'Neon',de:'Neon',fr:'Néon',es:'Neón',zh:'霓虹',ru:'Неон'},
+  bat_goud:{en:'Gold',nl:'Goud',de:'Gold',fr:'Or',es:'Oro',zh:'金色',ru:'Золотой'},
+  bat_vuur:{en:'Fire',nl:'Vuur',de:'Feuer',fr:'Feu',es:'Fuego',zh:'火焰',ru:'Огонь'},
+  bat_diamant:{en:'Diamond',nl:'Diamant',de:'Diamant',fr:'Diamant',es:'Diamante',zh:'钻石',ru:'Алмаз'},
+  bat_ocean:{en:'Ocean',nl:'Oceaan',de:'Ozean',fr:'Océan',es:'Océano',zh:'海洋',ru:'Океан'},
+  bat_cyber:{en:'Cyber',nl:'Cyber',de:'Cyber',fr:'Cyber',es:'Cyber',zh:'赛博',ru:'Кибер'},
+  bat_rainbow:{en:'Rainbow',nl:'Regenboog',de:'Regenbogen',fr:'Arc-en-ciel',es:'Arcoíris',zh:'彩虹',ru:'Радуга'},
+  bat_shadow:{en:'Shadow',nl:'Schaduw',de:'Schatten',fr:'Ombre',es:'Sombra',zh:'暗影',ru:'Тень'},
+  bat_lava:{en:'Lava',nl:'Lava',de:'Lava',fr:'Lave',es:'Lava',zh:'熔岩',ru:'Лава'},
+  map_classic:{en:'Classic',nl:'Klassiek',de:'Klassisch',fr:'Classique',es:'Clásico',zh:'经典',ru:'Классический'},
+  map_nacht:{en:'Night',nl:'Nacht',de:'Nacht',fr:'Nuit',es:'Noche',zh:'夜晚',ru:'Ночь'},
+  map_strand:{en:'Beach',nl:'Strand',de:'Strand',fr:'Plage',es:'Playa',zh:'海滩',ru:'Пляж'},
+  map_ijs:{en:'Ice',nl:'IJs',de:'Eis',fr:'Glace',es:'Hielo',zh:'冰雪',ru:'Лёд'},
+  map_disco:{en:'Disco',nl:'Disco',de:'Disco',fr:'Disco',es:'Disco',zh:'迪斯科',ru:'Диско'},
+  map_woestijn:{en:'Desert',nl:'Woestijn',de:'Wüste',fr:'Désert',es:'Desierto',zh:'沙漠',ru:'Пустыня'},
+  map_lente:{en:'Spring',nl:'Lente',de:'Frühling',fr:'Printemps',es:'Primavera',zh:'春天',ru:'Весна'},
+  map_ruimtestation:{en:'Space Station',nl:'Ruimtestation',de:'Raumstation',fr:'Station spatiale',es:'Estación espacial',zh:'太空站',ru:'Космическая станция'},
+  map_nachtstad:{en:'Night City',nl:'Nachtstad',de:'Nachtstadt',fr:'Ville nocturne',es:'Ciudad nocturna',zh:'夜城',ru:'Ночной город'},
+  ball_classic:{en:'Classic',nl:'Klassiek',de:'Klassisch',fr:'Classique',es:'Clásico',zh:'经典',ru:'Классический'},
+  ball_fire:{en:'Fire',nl:'Vuur',de:'Feuer',fr:'Feu',es:'Fuego',zh:'火焰',ru:'Огонь'},
+  ball_neon:{en:'Neon',nl:'Neon',de:'Neon',fr:'Néon',es:'Neón',zh:'霓虹',ru:'Неон'},
+  ball_gold:{en:'Gold',nl:'Goud',de:'Gold',fr:'Or',es:'Oro',zh:'金色',ru:'Золотой'},
+  ball_galaxy:{en:'Galaxy',nl:'Galaxy',de:'Galaxie',fr:'Galaxie',es:'Galaxia',zh:'星系',ru:'Галактика'},
+  ball_rainbow:{en:'Rainbow',nl:'Regenboog',de:'Regenbogen',fr:'Arc-en-ciel',es:'Arcoíris',zh:'彩虹',ru:'Радуга'},
+  ball_lightning:{en:'Lightning',nl:'Bliksem',de:'Blitz',fr:'Éclair',es:'Rayo',zh:'闪电',ru:'Молния'},
+  ball_toxic:{en:'Toxic',nl:'Gifbal',de:'Giftig',fr:'Toxique',es:'Tóxico',zh:'毒性',ru:'Токсичный'},
+  ball_crystal:{en:'Crystal',nl:'Kristal',de:'Kristall',fr:'Cristal',es:'Cristal',zh:'水晶',ru:'Кристалл'},
+  ball_smoke:{en:'Smoke',nl:'Rook',de:'Rauch',fr:'Fumée',es:'Humo',zh:'烟雾',ru:'Дым'},
+  ball_plasma:{en:'Plasma',nl:'Plasma',de:'Plasma',fr:'Plasma',es:'Plasma',zh:'等离子',ru:'Плазма'},
+  ball_pixel:{en:'Pixel',nl:'Pixel',de:'Pixel',fr:'Pixel',es:'Píxel',zh:'像素',ru:'Пиксель'},
+  crate_opened:{en:'Opened!',nl:'Geopend!',de:'Geöffnet!',fr:'Ouvert !',es:'¡Abierto!',zh:'已开启！',ru:'Открыто!'},
+  crate_peek:{en:"What's inside...",nl:'Wat zit erin...',de:'Was ist drin...',fr:"Qu'y a-t-il...",es:'¿Qué hay dentro...',zh:'里面是什么...',ru:'Что внутри...'},
+  equip_item:{en:'✨ Equip',nl:'✨ Uitrusten',de:'✨ Ausrüsten',fr:'✨ Équiper',es:'✨ Equipar',zh:'✨ 装备',ru:'✨ Надеть'},
+  menu_btn:{en:'← Menu',nl:'← Menu',de:'← Menü',fr:'← Menu',es:'← Menú',zh:'← 菜单',ru:'← Меню'},
+  bat_width_hdr:{en:'\U0001f3d3 Bat Width Upgrades',nl:'\U0001f3d3 Bat Breedte Upgrades',de:'\U0001f3d3 Schlägerbreite',fr:'\U0001f3d3 Largeur raquette',es:'\U0001f3d3 Ancho de pala',zh:'\U0001f3d3 球拍宽度升级',ru:'\U0001f3d3 Ширина ракетки'},
+  coin_boost_hdr:{en:'\U0001fa99 Coin Boost',nl:'\U0001fa99 Munt Boost',de:'\U0001fa99 Münzboost',fr:'\U0001fa99 Boost pièces',es:'\U0001fa99 Boost monedas',zh:'\U0001fa99 金币加成',ru:'\U0001fa99 Буст монет'},
+  upgrade_active:{en:'✓ Active',nl:'✓ Actief',de:'✓ Aktiv',fr:'✓ Actif',es:'✓ Activo',zh:'✓ 已启用',ru:'✓ Активно'},
+  upgrade_bought:{en:'Bought',nl:'Gekocht',de:'Gekauft',fr:'Acheté',es:'Comprado',zh:'已购买',ru:'Куплено'},
+  upgrade_purchased:{en:'Tier {n} purchased! +{p}%',nl:'Tier {n} gekocht! +{p}%',de:'Stufe {n} gekauft! +{p}%',fr:'Palier {n} acheté ! +{p}%',es:'Nivel {n} comprado! +{p}%',zh:'等级{n}已购买！+{p}%',ru:'Уровень {n} куплен! +{p}%'},
+  pu_shield:{en:'\U0001f6e1️ Shield!',nl:'\U0001f6e1️ Schild!',de:'\U0001f6e1️ Schild!',fr:'\U0001f6e1️ Bouclier !',es:'\U0001f6e1️ ¡Escudo!',zh:'\U0001f6e1️ 护盾！',ru:'\U0001f6e1️ Щит!'},
+  pu_magnet:{en:'\U0001f9f2 Magnet!',nl:'\U0001f9f2 Magneet!',de:'\U0001f9f2 Magnet!',fr:'\U0001f9f2 Aimant !',es:'\U0001f9f2 ¡Imán!',zh:'\U0001f9f2 磁铁！',ru:'\U0001f9f2 Магнит!'},
+  pu_doubler:{en:'\U0001f4b0 Doubler!',nl:'\U0001f4b0 Verdubbeling!',de:'\U0001f4b0 Verdoppler!',fr:'\U0001f4b0 Doubleur !',es:'\U0001f4b0 ¡Duplicador!',zh:'\U0001f4b0 双倍！',ru:'\U0001f4b0 Удвоитель!'},
+  pu_rebound:{en:'\U0001f504 Rebound!',nl:'\U0001f504 Rebound!',de:'\U0001f504 Rückprall!',fr:'\U0001f504 Rebond !',es:'\U0001f504 ¡Rebote!',zh:'\U0001f504 反弹！',ru:'\U0001f504 Отскок!'},
+  pu_slowmo:{en:'⏱️ Slow-mo!',nl:'⏱️ Slow-mo!',de:'⏱️ Zeitlupe!',fr:'⏱️ Ralenti !',es:'⏱️ ¡Cámara lenta!',zh:'⏱️ 慢动作！',ru:'⏱️ Замедление!'},
+  toast_ach:{en:'Achievement!',nl:'Prestatie!',de:'Erfolg!',fr:'Succès !',es:'¡Logro!',zh:'成就！',ru:'Достижение!'},
+  toast_coins_sm:{en:'coins',nl:'muntjes',de:'Münzen',fr:'pièces',es:'monedas',zh:'金币',ru:'монет'},
+  toast_milestone_hits:{en:'\U0001f389 Milestone: {n} balls hit!',nl:'\U0001f389 Mijlpaal: {n} ballen geslagen!',de:'\U0001f389 Meilenstein: {n} Bälle!',fr:'\U0001f389 Étape : {n} balles !',es:'\U0001f389 ¡Hito: {n} golpes!',zh:'\U0001f389 里程碑：击球{n}次！',ru:'\U0001f389 Веха: {n} мячей!'},
+  toast_milestone_games:{en:'\U0001f3ae Milestone: {n} games!',nl:'\U0001f3ae Mijlpaal: {n} potjes gespeeld!',de:'\U0001f3ae Meilenstein: {n} Spiele!',fr:'\U0001f3ae Étape : {n} parties !',es:'\U0001f3ae ¡Hito: {n} partidas!',zh:'\U0001f3ae 里程碑：玩了{n}局！',ru:'\U0001f3ae Веха: {n} игр!'},
+  toast_piggy:{en:'\U0001f437\U0001f4a5 Piggy bank: +{n} \U0001fa99',nl:'\U0001f437\U0001f4a5 Spaarpot gebroken: +{n} \U0001fa99',de:'\U0001f437\U0001f4a5 Sparschwein: +{n} \U0001fa99',fr:'\U0001f437\U0001f4a5 Tirelire: +{n} \U0001fa99',es:'\U0001f437\U0001f4a5 Hucha: +{n} \U0001fa99',zh:'\U0001f437\U0001f4a5 存钱罐碎了: +{n} \U0001fa99',ru:'\U0001f437\U0001f4a5 Копилка: +{n} \U0001fa99'},
+  toast_daily_ch:{en:'\U0001f4c5 <strong>Daily challenge!</strong>',nl:'\U0001f4c5 <strong>Dagelijkse uitdaging!</strong>',de:'\U0001f4c5 <strong>Tagesaufgabe!</strong>',fr:'\U0001f4c5 <strong>Défi quotidien !</strong>',es:'\U0001f4c5 <strong>¡Reto diario!</strong>',zh:'\U0001f4c5 <strong>每日挑战！</strong>',ru:'\U0001f4c5 <strong>Ежедневное задание!</strong>'},
+  toast_weekly_ch:{en:'\U0001f4c6 <strong>Weekly challenge!</strong>',nl:'\U0001f4c6 <strong>Wekelijkse uitdaging!</strong>',de:'\U0001f4c6 <strong>Wochenaufgabe!</strong>',fr:'\U0001f4c6 <strong>Défi hebdo !</strong>',es:'\U0001f4c6 <strong>¡Reto semanal!</strong>',zh:'\U0001f4c6 <strong>每周挑战！</strong>',ru:'\U0001f4c6 <strong>Еженедельное задание!</strong>'},
+  toast_prestige:{en:'\U0001f31f <strong>Prestige {n}!</strong> +{p}% coin bonus!',nl:'\U0001f31f <strong>Prestige {n}!</strong> +{p}% muntjes bonus!',de:'\U0001f31f <strong>Prestige {n}!</strong> +{p}% Münzbonus!',fr:'\U0001f31f <strong>Prestige {n} !</strong> +{p}% bonus pièces !',es:'\U0001f31f <strong>¡Prestige {n}!</strong> +{p}% bonus monedas!',zh:'\U0001f31f <strong>威望{n}！</strong> +{p}%金币加成！',ru:'\U0001f31f <strong>Престиж {n}!</strong> +{p}% монет!'},
+  trail_active_badge:{en:'✨ Active',nl:'✨ Actief',de:'✨ Aktiv',fr:'✨ Actif',es:'✨ Activo',zh:'✨ 已启用',ru:'✨ Активно'},
+  bwt_name_1:{en:'Bat +10%',nl:'Bat +10%',de:'Schläger +10%',fr:'Raquette +10%',es:'Pala +10%',zh:'球拍+10%',ru:'Ракетка +10%'},
+  bwt_name_2:{en:'Bat +20%',nl:'Bat +20%',de:'Schläger +20%',fr:'Raquette +20%',es:'Pala +20%',zh:'球拍+20%',ru:'Ракетка +20%'},
+  bwt_name_3:{en:'Bat +30%',nl:'Bat +30%',de:'Schläger +30%',fr:'Raquette +30%',es:'Pala +30%',zh:'球拍+30%',ru:'Ракетка +30%'},
+  bwt_desc_1:{en:'10% wider bat',nl:'10% bredere bat',de:'10% breiterer Schläger',fr:'Raquette 10% plus large',es:'Pala 10% más ancha',zh:'球拍宽10%',ru:'Ракетка шире на 10%'},
+  bwt_desc_2:{en:'20% wider bat',nl:'20% bredere bat',de:'20% breiterer Schläger',fr:'Raquette 20% plus large',es:'Pala 20% más ancha',zh:'球拍宽20%',ru:'Ракетка шире на 20%'},
+  bwt_desc_3:{en:'30% wider bat (max)',nl:'30% bredere bat (max)',de:'30% breiterer Schläger (max)',fr:'Raquette 30% plus large (max)',es:'Pala 30% más ancha (máx.)',zh:'球拍宽30%（最大）',ru:'Ракетка шире на 30% (макс)'},
+  cbt_name_1:{en:'Coin Boost +10%',nl:'Munt Boost +10%',de:'Münzboost +10%',fr:'Boost pièces +10%',es:'Boost monedas +10%',zh:'金币加成+10%',ru:'Буст монет +10%'},
+  cbt_name_2:{en:'Coin Boost +20%',nl:'Munt Boost +20%',de:'Münzboost +20%',fr:'Boost pièces +20%',es:'Boost monedas +20%',zh:'金币加成+20%',ru:'Буст монет +20%'},
+  cbt_name_3:{en:'Coin Boost +30%',nl:'Munt Boost +30%',de:'Münzboost +30%',fr:'Boost pièces +30%',es:'Boost monedas +30%',zh:'金币加成+30%',ru:'Буст монет +30%'},
+  cbt_desc_1:{en:'10% more coins per point',nl:'10% meer munten per punt',de:'10% mehr Münzen pro Punkt',fr:'10% pièces en plus',es:'10% más monedas',zh:'每分多10%金币',ru:'На 10% монет больше'},
+  cbt_desc_2:{en:'20% more coins per point',nl:'20% meer munten per punt',de:'20% mehr Münzen pro Punkt',fr:'20% pièces en plus',es:'20% más monedas',zh:'每分多20%金币',ru:'На 20% монет больше'},
+  cbt_desc_3:{en:'30% more coins (max)',nl:'30% meer muntjes (max)',de:'30% mehr Münzen (max)',fr:'30% pièces en plus (max)',es:'30% más monedas (máx.)',zh:'金币+30%（最大）',ru:'На 30% монет (макс)'},
+  featured_item_bought:{en:'\U0001f31f <strong>Featured item purchased!</strong> -20% discount!',nl:'\U0001f31f <strong>Uitgelicht item gekocht!</strong> -20% korting!',de:'\U0001f31f <strong>Angebot gekauft!</strong> -20% Rabatt!',fr:'\U0001f31f <strong>Article vedette acheté !</strong> -20% !',es:'\U0001f31f <strong>¡Artículo destacado comprado!</strong> -20%!',zh:'\U0001f31f <strong>特色商品已购！</strong> 享8折！',ru:'\U0001f31f <strong>Товар куплен!</strong> -20%!'},
+};\nfunction t(key){
   const lang=typeof S!=='undefined'&&S&&S.language?S.language:'en';
   return(TRANSLATIONS[key]&&(TRANSLATIONS[key][lang]||TRANSLATIONS[key]['en']))||key;
 }
 function achDescTxt(a){const k='ad_'+a.stat;const s=t(k);return s===k?a.desc:s.replace('{n}',a.target);}
 function chDescTxt(c){const k='cd_'+c.stat;const s=t(k);return s===k?c.desc:s.replace('{n}',c.target);}
+function achNameTxt(a){const k='an_'+a.id;const s=t(k);return s===k?a.name:s;}
+function itemName(item,tab){const pfx={bats:'bat_',maps:'map_',balls:'ball_'}[tab]||'';if(!pfx)return item.name;const k=pfx+item.id;const s=t(k);return s===k?item.name:s;}
+function bpRewardName(node){if(node.reward.type==='coins')return(node.reward.amount||node.reward.value)+' '+t('coins_word');if(node.reward.type==='crate')return t('crate_'+(node.reward.rarity||node.reward.value));if(node.reward.type==='bat')return itemName({id:node.reward.id,name:node.name},'bats');if(node.reward.type==='map')return itemName({id:node.reward.id,name:node.name},'maps');return node.name;}
 canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect(),sx=W/r.width,sy=H/r.height;
   racket.x=(e.clientX-r.left)*sx;racket.y=(e.clientY-r.top)*sy;
@@ -3092,7 +3206,7 @@ function activatePowerup(type){
   powerupsUsed++;
   S.stats.powerupsActivated++;
   checkAchievement('powerupsActivated',S.stats.powerupsActivated);
-  const names={slowmo:'⏱️ Slow-mo!',shield:'🛡️ Schild!',magnet:'🧲 Magneet!',doubler:'💰 Verdubbeling!',rebound:'🔄 Rebound!',slow_mo:'⏱ SLOW MOTION!'};
+  const names={slowmo:t('pu_slowmo'),shield:t('pu_shield'),magnet:t('pu_magnet'),doubler:t('pu_doubler'),rebound:t('pu_rebound'),slow_mo:t('pu_slowmo')};
   showToast(names[type]||'Power-up!');
   playPowerup();
 }
@@ -3926,7 +4040,7 @@ function renderInventoryScreen(){
       ${isActive?`<div class="badge-row"><span class="badge active">${t('active_lbl')}</span></div>`:''}
       <canvas id="${prevId}" width="74" height="64" style="border-radius:5px"></canvas>
       <div class="rarity-label">${rarityNames[item.rarity]}</div>
-      <div class="item-name">${item.emoji} ${item.name}</div>
+      <div class="item-name">${item.emoji} ${itemName(item,inventoryTab)}</div>
       <div style="font-size:.68rem;color:#556;margin-bottom:6px">${sourceLabels[item.source]||''}</div>
       <div>
         ${isActive
@@ -4116,7 +4230,7 @@ function renderShop(){
     div.innerHTML=`${badges}
       <canvas id="${prevId}" width="74" height="64" style="border-radius:5px"></canvas>
       <div class="rarity-label">${rarityNames[item.rarity]}</div>
-      <div class="item-name">${item.emoji} ${item.name}</div>
+      <div class="item-name">${item.emoji} ${itemName(item,shopTab)}</div>
       <div class="item-price">${item.price===0?'<span style="color:var(--accent)">'+t('free')+'</span>':'🪙 '+item.price}</div>
       <div style="margin-top:6px">
       ${isActive?`<button class="btn secondary" style="padding:5px 12px;font-size:.75rem" disabled>${t('in_use')}</button>`:
@@ -4166,20 +4280,20 @@ function renderUpgradesShop(grid){
   const TRAIL_UPGRADE_COST=75;
   grid.style.gridTemplateColumns='1fr';
   // Bat width upgrades
-  let html='<div style="font-size:.85rem;font-weight:700;color:#00ff99;margin-bottom:12px;text-align:left">🏓 Bat Breedte Upgrades</div>';
-  BAT_WIDTH_TIERS.forEach(t=>{
-    const owned=(S.batWidthTier||0)>=t.tier;
-    const canBuy=S.coins>=t.cost&&(S.batWidthTier||0)===t.tier-1;
-    const isCurrent=(S.batWidthTier||0)===t.tier;
+  let html=`${t('bat_width_hdr')}</div>`;
+  BAT_WIDTH_TIERS.forEach(tier=>{
+    const owned=(S.batWidthTier||0)>=tier.tier;
+    const canBuy=S.coins>=tier.cost&&(S.batWidthTier||0)===tier.tier-1;
+    const isCurrent=(S.batWidthTier||0)===tier.tier;
     html+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(${owned?'0,255,100':'255,255,255'},0.15);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:1.5rem">${t.emoji}</span>
+      <span style="font-size:1.5rem">${tier.emoji}</span>
       <div style="flex:1">
-        <div style="font-weight:700;font-size:.9rem">${t.name}</div>
-        <div style="font-size:.75rem;color:#778">${t.desc}</div>
+        <div style="font-weight:700;font-size:.9rem">${t('bwt_name_'+tier.tier)}</div>
+        <div style="font-size:.75rem;color:#778">${t('bwt_desc_'+tier.tier)}</div>
       </div>
-      ${isCurrent?'<span style="color:#00ff99;font-weight:700;font-size:.8rem">✓ Actief</span>':
-        owned?'<span style="color:#556;font-size:.8rem">Gekocht</span>':
-        `<button class="btn ${canBuy?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyBatWidthTier(${t.tier},${t.cost})" ${canBuy?'':'disabled'}>🪙 ${t.cost}</button>`}
+      ${isCurrent?`<span style="color:#00ff99;font-weight:700;font-size:.8rem">${t('upgrade_active')}</span>`:
+        owned?`<span style="color:#556;font-size:.8rem">${t('upgrade_bought')}</span>`:
+        `<button class="btn ${canBuy?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyBatWidthTier(${tier.tier},${tier.cost})" ${canBuy?'':'disabled'}>🪙 ${tier.cost}</button>`}
     </div>`;
   });
   // V14: Coin boost upgrades
@@ -4188,20 +4302,20 @@ function renderUpgradesShop(grid){
     {tier:2,name:'Munt Boost +20%',desc:'20% meer munten per punt',cost:700,emoji:'💰'},
     {tier:3,name:'Munt Boost +30%',desc:'30% meer munten (max)',cost:1200,emoji:'🏦'},
   ];
-  html+='<div style="font-size:.85rem;font-weight:700;color:#ffd700;margin:16px 0 12px;text-align:left">🪙 Munt Boost</div>';
-  COIN_BOOST_TIERS.forEach(t=>{
-    const owned=(S.coinBoostTier||0)>=t.tier;
-    const canBuy=S.coins>=t.cost&&(S.coinBoostTier||0)===t.tier-1;
-    const isCurrent=(S.coinBoostTier||0)===t.tier;
+  html+=`<div style="font-size:.85rem;font-weight:700;color:#ffd700;margin:16px 0 12px;text-align:left">${t('coin_boost_hdr')}</div>`;
+  COIN_BOOST_TIERS.forEach(tier=>{
+    const owned=(S.coinBoostTier||0)>=tier.tier;
+    const canBuy=S.coins>=tier.cost&&(S.coinBoostTier||0)===tier.tier-1;
+    const isCurrent=(S.coinBoostTier||0)===tier.tier;
     html+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(${owned?'255,215,0':'255,255,255'},0.15);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:8px">
-      <span style="font-size:1.5rem">${t.emoji}</span>
+      <span style="font-size:1.5rem">${tier.emoji}</span>
       <div style="flex:1;text-align:left">
-        <div style="font-weight:700;font-size:.9rem">${t.name}</div>
-        <div style="font-size:.75rem;color:#778">${t.desc}</div>
+        <div style="font-weight:700;font-size:.9rem">${t('cbt_name_'+tier.tier)}</div>
+        <div style="font-size:.75rem;color:#778">${t('cbt_desc_'+tier.tier)}</div>
       </div>
-      ${isCurrent?'<span style="color:#ffd700;font-weight:700;font-size:.8rem">✓ Actief</span>':
-        owned?'<span style="color:#556;font-size:.8rem">Gekocht</span>':
-        `<button class="btn ${canBuy?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyCoinBoostTier(${t.tier},${t.cost})">🪙 ${t.cost}</button>`}
+      ${isCurrent?`<span style="color:#ffd700;font-weight:700;font-size:.8rem">${t('upgrade_active')}</span>`:
+        owned?`<span style="color:#556;font-size:.8rem">${t('upgrade_bought')}</span>`:
+        `<button class="btn ${canBuy?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyCoinBoostTier(${tier.tier},${tier.cost})">🪙 ${tier.cost}</button>`}
     </div>`;
   });
   // Trail upgrades section
@@ -4212,7 +4326,7 @@ function renderUpgradesShop(grid){
     html+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:1.5rem">${bat.emoji}</span>
       <div style="flex:1"><div style="font-weight:700;font-size:.9rem">${bat.name}</div><div style="font-size:.75rem;color:#778">Trail effect</div></div>
-      ${hasTrail?'<span style="color:#00ccff;font-size:.8rem">✨ Actief</span>':`<button class="btn ${S.coins>=TRAIL_UPGRADE_COST?'secondary':'secondary'}" style="padding:5px 12px;font-size:.75rem;color:#aaddff" onclick="upgradeTrail('${bat.id}')" ${S.coins<TRAIL_UPGRADE_COST?'disabled':''}>✨ ${TRAIL_UPGRADE_COST} 🪙</button>`}
+      ${hasTrail?`<span style="color:#00ccff;font-size:.8rem">${t('trail_active_badge')}</span>`:`<button class="btn ${S.coins>=TRAIL_UPGRADE_COST?'secondary':'secondary'}" style="padding:5px 12px;font-size:.75rem;color:#aaddff" onclick="upgradeTrail('${bat.id}')" ${S.coins<TRAIL_UPGRADE_COST?'disabled':''}>✨ ${TRAIL_UPGRADE_COST} 🪙</button>`}
     </div>`;
   });
   grid.innerHTML=html;
@@ -4222,13 +4336,13 @@ function buyCoinBoostTier(tier,cost){
   if(S.coins<cost){showToast(t('not_enough_coins'));return;}
   if((S.coinBoostTier||0)!==tier-1){showToast(t('buy_prev_tier'));return;}
   S.coins-=cost;S.coinBoostTier=tier;
-  saveState();showToast(`🪙 Munt Boost tier ${tier} gekocht! +${tier*10}% munten`);renderShop();
+  saveState();showToast(t('upgrade_purchased').replace('{n}',tier).replace('{p}',tier*10));renderShop();
 }
 function buyBatWidthTier(tier,cost){
   if(S.coins<cost){showToast(t('not_enough_coins'));return;}
   if((S.batWidthTier||0)!==tier-1){showToast(t('buy_prev_tier'));return;}
   S.coins-=cost;S.batWidthTier=tier;
-  saveState();showToast(`🏓 Bat breedte tier ${tier} gekocht!`);renderShop();
+  saveState();showToast(t('upgrade_purchased').replace('{n}',tier).replace('{p}',tier*10));renderShop();
 }
 function buyFeaturedItem(){
   if(!S.featuredItem)return;
@@ -4240,7 +4354,7 @@ function buyFeaturedItem(){
   else if(fi.type==='map')S.ownedMaps.push(fi.id);
   else S.ownedBallSkins.push(fi.id);
   selectItem(tab,fi.id);
-  showToast(`🌟 <strong>Uitgelicht item gekocht!</strong> -20% korting!`,'lvl-toast',3500);
+  showToast(t('featured_item_bought'),'lvl-toast',3500);
   checkAllAchievements();
 }
 function upgradeTrail(batId){
@@ -4282,7 +4396,7 @@ function showBP(){
     div.className='bp-node'+(unlocked?' unlocked':'')+(isCurrent?' current':'')+(node.isLegendary?' legendary-node':'');
     div.innerHTML=`<div class="bp-circle">${unlocked?'✅':node.icon}</div>
       <div class="bp-lvl">Lv.${node.lvl}</div>
-      <div class="bp-name">${node.name}</div>`;
+      <div class="bp-name">${bpRewardName(node)}</div>`;
     track.appendChild(div);
   });
 }
@@ -4315,7 +4429,7 @@ function showAchievements(){
     div.className='ach-card'+(isDone?' done':'');
     div.innerHTML=`<div class="ach-icon">${isDone?a.icon:'🔒'}</div>
       <div style="flex:1">
-        <div class="ach-name">${isDone?a.name:'???'}</div>
+        <div class="ach-name">${isDone?achNameTxt(a):'???'}</div>
         <div class="ach-desc">${isDone?achDescTxt(a):t('locked_desc')}</div>
         ${!isDone?`<div class="ach-prog">${cur} / ${a.target}</div>
         <div class="ach-prog-bar"><div class="ach-prog-fill" style="width:${pct}%"></div></div>`:''}
@@ -4438,7 +4552,7 @@ function showProfile(){
       <div style="font-size:.75rem;color:#556;margin-bottom:8px;font-weight:700;text-align:left">${t('titles_hdr')}</div>
       ${titlesHtml}
     </div>
-    <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showMenu)">\u2190 Terug</button></div>
+    <div class="btnrow"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
   </div>`;
   overlay.style.display='flex';
   startMenuLoop();
@@ -4589,7 +4703,7 @@ function checkDailyChallenges(){
       S.coins+=ch.reward;S.stats.totalCoins+=ch.reward;
       S.stats.dailyChallengesCompleted++;
       coinUiEl.textContent=S.coins;
-      showToast(`📅 <strong>Dagelijkse uitdaging!</strong><br><small>${ch.desc} · +${ch.reward} 🪙</small>`,'ach-toast',4500);
+      showToast(`${t('toast_daily_ch')}<br><small>${chDescTxt(ch)} · +${ch.reward} 🪙</small>`,'ach-toast',4500);
       playComboMilestone();
       checkAchievement('dailyChallengesCompleted',S.stats.dailyChallengesCompleted);
       changed=true;
@@ -4627,7 +4741,7 @@ function checkWeeklyChallenges(){
       ch.done=true;
       S.coins+=ch.reward;S.stats.totalCoins+=ch.reward;
       coinUiEl.textContent=S.coins;
-      showToast(`📆 <strong>Wekelijkse uitdaging!</strong><br><small>${ch.desc} · +${ch.reward} 🪙</small>`,'ach-toast',5000);
+      showToast(`${t('toast_weekly_ch')}<br><small>${chDescTxt(ch)} · +${ch.reward} 🪙</small>`,'ach-toast',5000);
       playComboMilestone();
       changed=true;
     }
@@ -4808,7 +4922,7 @@ function doPrestige(){
   S.coins+=100;S.stats.totalCoins+=100;
   saveState();updateXpUI();
   checkAchievement('prestige',S.prestige);
-  showToast(`🌟 <strong>Prestige ${S.prestige}!</strong> +${Math.round(S.prestige*25)}% muntjes bonus!`,'lvl-toast',5000);
+  showToast(t('toast_prestige').replace('{n}',S.prestige).replace('{p}',Math.round(S.prestige*25)),'lvl-toast',5000);
   showMenu();
 }
 
