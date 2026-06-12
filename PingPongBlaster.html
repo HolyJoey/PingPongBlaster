@@ -50,6 +50,9 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 .menu-streak{color:#ff8800;white-space:nowrap;font-weight:700;}
 @keyframes achFlash{0%{opacity:1}100%{opacity:0}}
 .btn-play{width:100%;padding:14px;font-size:1.1rem;letter-spacing:1.5px;margin-bottom:12px;border-radius:12px;}
+.confetti-piece{position:fixed;top:-16px;width:9px;height:15px;border-radius:2px;animation:confFall linear forwards;pointer-events:none;z-index:99;}
+@keyframes confFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(740deg);opacity:.65}}
+@keyframes newPulse{0%,100%{opacity:1}50%{opacity:.55}}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .menu-grid .btn{padding:10px 8px;font-size:.78rem;border-radius:10px;letter-spacing:.3px;}
 
@@ -1425,7 +1428,11 @@ function getTrailStyle(id){
     regenboogtrail:{rainbow:true,w:1.35,g:1.7},
     shadow:{c:'#9933ff',w:1.25,g:1.4},
     schaduwkloon:{c:'#9933ff',w:1.25,g:1.4},
-    pingmaster:{c:'#ffd700',w:1.4,g:1.8}
+    pingmaster:{c:'#ffd700',w:1.4,g:1.8},
+    samurai:{c:'#ff3333',w:1.2,g:1.4},
+    mecha:{c:'#00e6ff',w:1.1,g:1.7},
+    engel:{c:'#fff8d0',w:1.3,g:1.8},
+    phantom:{c:'#aaaacc',w:1.0,g:1.1}
   };
   const s=base[id]||{c:'#00ff99',w:1.0,g:1.0};
   return {upgraded, rainbow:!!s.rainbow, w:s.w, g:s.g,
@@ -1924,6 +1931,12 @@ const ACHIEVEMENTS=[
   {id:'coins2000',    name:'2000 Muntjes',      desc:'Verdien 2000 muntjes totaal',        icon:'🏦', target:2000, stat:'totalCoins',   reward:200},
   {id:'level15',      name:'Level 15',          desc:'Bereik level 15',                    icon:'⚡', target:15,   stat:'level',        reward:200},
   {id:'level30',      name:'Level 30 — Ping Pong God',desc:'Bereik het maximale level 30', icon:'🎆', target:30,   stat:'level',        reward:500},
+  {id:'boss_5',       name:'Boss Slayer',       desc:'Versla 5 boss ballen',               icon:'⚔️', target:5,    stat:'bossDefeated', reward:50},
+  {id:'shields_3',    name:'Beschermeling',     desc:'Gebruik 3 combo shields',            icon:'🛡️', target:3,    stat:'shieldsUsed',  reward:30},
+  {id:'mystery_10',   name:'Mysterie Jager',    desc:'Raak 10 mystery ballen',             icon:'❓', target:10,   stat:'mysteryHit',   reward:40},
+  {id:'frenzy_3',     name:'Frenzy Fanaat',     desc:'Activeer 3x een Frenzy',             icon:'🔥', target:3,    stat:'frenzyCount',  reward:35},
+  {id:'zen_10',       name:'Zen Meester',       desc:'Speel 10 Zen Mode potjes',           icon:'🧘', target:10,   stat:'zenGames',     reward:40},
+  {id:'perfect_25',   name:'Precisie Koning',   desc:'25 perfecte treffers',               icon:'✨', target:25,   stat:'perfectHits',  reward:45},
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1973,6 +1986,7 @@ function defaultState(){
     batXP:{},
     calendarDay:1,
     calendarDate:'',
+    coinBoostTier:0,
   };
 }
 let S=loadState()||defaultState();
@@ -2029,6 +2043,10 @@ if(S.calendarDay==null)S.calendarDay=1;
 if(S.calendarDate==null)S.calendarDate='';
 if(S.stats.bossDefeated==null)S.stats.bossDefeated=0;
 if(S.stats.shieldsUsed==null)S.stats.shieldsUsed=0;
+if(S.stats.zenGames==null)S.stats.zenGames=0;
+if(S.stats.frenzyCount==null)S.stats.frenzyCount=0;
+if(S.stats.mysteryHit==null)S.stats.mysteryHit=0;
+if(S.coinBoostTier==null)S.coinBoostTier=0;
 function saveState(){localStorage.setItem('ppb_v3',JSON.stringify(S));}
 
 // helpers
@@ -2630,10 +2648,17 @@ function pauseGame(){
   gameState='paused';
   cancelAnimationFrame(raf);
   stopBGM();
+  const modeName=S.gameMode==='survival'?'🌪️ Survival':(S.gameMode==='zen'?'🧘 Zen':'🏓 Klassiek');
   overlay.innerHTML=`<div class="panel" style="max-width:360px">
     <div style="font-size:2rem">⏸️</div>
     <h1 style="font-size:1.5rem">Gepauzeerd</h1>
-    <p class="subtitle">Score: ${score} &nbsp;·&nbsp; Combo: ${combo}</p>
+    <p class="subtitle" style="margin-bottom:8px">${modeName} · ${getDiff().emoji} ${getDiff().name}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 14px">
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${score}</div><div style="font-size:.7rem;color:#556">Score</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:#ff9500">${combo}</div><div style="font-size:.7rem;color:#556">Combo</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${gameHits}</div><div style="font-size:.7rem;color:#556">Treffers</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--coin)">${gameCoins}</div><div style="font-size:.7rem;color:#556">Muntjes</div></div>
+    </div>
     <div class="btnrow">
       <button class="btn" onclick="resumeGame()">▶ Doorgaan</button>
       <button class="btn orange" onclick="triggerGameOver('Spel gestopt.')">Stoppen</button>
@@ -3589,6 +3614,15 @@ function drawPowerupIndicator(){
 // ══════════════════════════════════════════════════════════════════════════════
 //  SCREENS
 // ══════════════════════════════════════════════════════════════════════════════
+function confettiHTML(){
+  const cols=['#ff3366','#ffd700','#00ff99','#4a9eff','#b94fff','#ff9500','#00ffee'];
+  let h='<div style="position:fixed;inset:0;pointer-events:none;overflow:hidden">';
+  for(let i=0;i<55;i++){
+    const c=cols[i%cols.length],left=Math.random()*100,delay=Math.random()*0.9,dur=1.8+Math.random()*1.6;
+    h+=`<span class="confetti-piece" style="left:${left}vw;background:${c};animation-duration:${dur}s;animation-delay:${delay}s"></span>`;
+  }
+  return h+'</div>';
+}
 function triggerGameOver(reden){
   stopBGM();playGameOver();
   gameState='gameover';
@@ -3637,7 +3671,7 @@ function triggerGameOver(reden){
 
   const isNewBest=score>0&&score===S.best;
   const xpEarned=Math.floor(score*1.5);
-  overlay.innerHTML=`<div class="panel" style="max-width:400px;text-align:center">
+  overlay.innerHTML=`${isNewBest&&!isZen?confettiHTML():''}<div class="panel" style="max-width:400px;text-align:center">
     <div style="font-size:1rem;color:#778;margin-bottom:4px">${isSurvival?'SURVIVAL MODE':(isZen?'🧘 ZEN MODE':'GAME OVER')}</div>
     <div style="font-family:'Orbitron',monospace;font-size:3.5rem;color:var(--accent);line-height:1">${score}</div>
     ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">🏆 Nieuw persoonlijk record!</div>':
@@ -3913,6 +3947,7 @@ function renderShop(){
     let badges='<div class="badge-row">';
     if(isActive)badges+='<span class="badge active">Actief</span>';
     else if(isOwned)badges+='<span class="badge owned">Gekocht</span>';
+    if(item.isNew&&!isOwned)badges+='<span class="badge" style="background:#ff3366;color:#fff;animation:newPulse 1.5s ease-in-out infinite">NIEUW</span>';
     badges+='</div>';
     const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
     div.innerHTML=`${badges}
@@ -3984,6 +4019,28 @@ function renderUpgradesShop(grid){
         `<button class="btn ${canBuy?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyBatWidthTier(${t.tier},${t.cost})" ${canBuy?'':'disabled'}>🪙 ${t.cost}</button>`}
     </div>`;
   });
+  // V14: Coin boost upgrades
+  const COIN_BOOST_TIERS=[
+    {tier:1,name:'Munt Boost +10%',desc:'10% meer munten per punt',cost:300,emoji:'🪙'},
+    {tier:2,name:'Munt Boost +20%',desc:'20% meer munten per punt',cost:700,emoji:'💰'},
+    {tier:3,name:'Munt Boost +30%',desc:'30% meer munten (max)',cost:1200,emoji:'🏦'},
+  ];
+  html+='<div style="font-size:.85rem;font-weight:700;color:#ffd700;margin:16px 0 12px;text-align:left">🪙 Munt Boost</div>';
+  COIN_BOOST_TIERS.forEach(t=>{
+    const owned=(S.coinBoostTier||0)>=t.tier;
+    const canBuy=S.coins>=t.cost&&(S.coinBoostTier||0)===t.tier-1;
+    const isCurrent=(S.coinBoostTier||0)===t.tier;
+    html+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(${owned?'255,215,0':'255,255,255'},0.15);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <span style="font-size:1.5rem">${t.emoji}</span>
+      <div style="flex:1;text-align:left">
+        <div style="font-weight:700;font-size:.9rem">${t.name}</div>
+        <div style="font-size:.75rem;color:#778">${t.desc}</div>
+      </div>
+      ${isCurrent?'<span style="color:#ffd700;font-weight:700;font-size:.8rem">✓ Actief</span>':
+        owned?'<span style="color:#556;font-size:.8rem">Gekocht</span>':
+        `<button class="btn ${canBuy?'orange':'secondary'}" style="padding:5px 12px;font-size:.75rem" onclick="buyCoinBoostTier(${t.tier},${t.cost})">🪙 ${t.cost}</button>`}
+    </div>`;
+  });
   // Trail upgrades section
   html+='<div style="font-size:.85rem;font-weight:700;color:#00ccff;margin:16px 0 12px;text-align:left">✨ Trail Upgrades</div>';
   BATS.filter(b=>b.source==='shop').forEach(bat=>{
@@ -3998,6 +4055,12 @@ function renderUpgradesShop(grid){
   grid.innerHTML=html;
 }
 
+function buyCoinBoostTier(tier,cost){
+  if(S.coins<cost){showToast('❌ Niet genoeg muntjes!');return;}
+  if((S.coinBoostTier||0)!==tier-1){showToast('❌ Koop de vorige tier eerst!');return;}
+  S.coins-=cost;S.coinBoostTier=tier;
+  saveState();showToast(`🪙 Munt Boost tier ${tier} gekocht! +${tier*10}% munten`);renderShop();
+}
 function buyBatWidthTier(tier,cost){
   if(S.coins<cost){showToast('❌ Niet genoeg muntjes!');return;}
   if((S.batWidthTier||0)!==tier-1){showToast('❌ Koop de vorige tier eerst!');return;}
@@ -4019,7 +4082,7 @@ function buyFeaturedItem(){
 }
 function upgradeTrail(batId){
   if(S.coins<75){showToast('\u274C Niet genoeg muntjes!');return;}
-  const trailColors={classic:'#ff7070',neon:'#dd55ff',goud:'#ffdd33',vuur:'#ff8833',diamant:'#bbe6ff',ocean:'#44bbff',cyber:'#00ffdd',lava:'#ff6622',bliksem:'#ffff44',ijs:'#cceeff',glas:'#cce6ff',kosmisch:'#aa66ff',draak:'#66ff44',giftig:'#33ff77',ridder:'#ccccee',koninklijk:'#ffd633',rainbow:'#ff66ff',shadow:'#aa44ff',schaduwkloon:'#aa44ff',pingmaster:'#ffe055'};
+  const trailColors={classic:'#ff7070',neon:'#dd55ff',goud:'#ffdd33',vuur:'#ff8833',diamant:'#bbe6ff',ocean:'#44bbff',cyber:'#00ffdd',lava:'#ff6622',bliksem:'#ffff44',ijs:'#cceeff',glas:'#cce6ff',kosmisch:'#aa66ff',draak:'#66ff44',giftig:'#33ff77',ridder:'#ccccee',koninklijk:'#ffd633',rainbow:'#ff66ff',shadow:'#aa44ff',schaduwkloon:'#aa44ff',pingmaster:'#ffe055',samurai:'#ff4444',mecha:'#00e6ff',engel:'#fff0b0',phantom:'#bbbbdd'};
   S.coins-=75;S.trailUpgrades[batId]=trailColors[batId]||'#ffffff';
   saveState();showToast('\u2728 Trail ge\u00FCpgraded!');renderShop();
 }
@@ -4253,7 +4316,7 @@ function showSettings(){
         onclick="S.ballTrail=!S.ballTrail;saveState();document.getElementById('ballTrailBtn').textContent=S.ballTrail?'Aan':'Uit';document.getElementById('ballTrailBtn').className='btn '+(S.ballTrail?'':'secondary')">${S.ballTrail!==false?'Aan':'Uit'}</button>
     </div>
     <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v13.1</div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v14.0</div>
   </div>`;
   overlay.style.display='flex';
 }
