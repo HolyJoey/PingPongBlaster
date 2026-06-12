@@ -2670,13 +2670,15 @@ function spawnBall(){
   const speed=(2.2+Math.min(score*.16,10))*getDiff().speedMult,ang=Math.atan2(H/2-y,W/2-x)+rndf(-.3,.3);
   const r=Math.random();
   const sm=getDiff().specialMult;
-  let bomb=false,golden=false,powerup=null;
+  let bomb=false,golden=false,powerup=null,mystery=false,curve=false;
   if(r<0.025*sm){bomb=true;}
   else if(r<0.04*sm){golden=true;}
   else if(r<0.10*sm){powerup=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];}
+  else if(r<0.13*sm){mystery=true;}
+  else if(r<0.17*sm){curve=true;}
   const b={x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:13,rot:0,dir:pickDir(),
     departing:false,remove:false,cooldown:0,departVx:0,departVy:0,flash:0,spawnT:.3,trail:[],
-    bomb,golden,powerup};
+    bomb,golden,powerup,mystery,curve,curvePhase:Math.random()*Math.PI*2};
   const sizeRoll=Math.random();
   if(sizeRoll<0.15){b.r=8;b.vx*=1.3;b.vy*=1.3;b.small=true;}
   else if(sizeRoll<0.25){b.r=18;b.vx*=0.75;b.vy*=0.75;b.big=true;}
@@ -2880,6 +2882,28 @@ function registerPoint(x,y,b){
   else if(combo===25){const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x25! +5 🪙');}
   else if(combo===50){const bc=10;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x50! +10 🪙');}
 
+  // V14: Frenzy event every 40 points
+  if(score>0&&score%40===0&&!frenzyActive){
+    frenzyActive=true;frenzyTimer=600;
+    S.stats.frenzyCount=(S.stats.frenzyCount||0)+1;checkAchievement('frenzyCount',S.stats.frenzyCount);
+    showToast('🔥 <strong>FRENZY!</strong> 10 sec dubbele munten!','lvl-toast',3000);playComboMilestone();
+  }
+  // V14: Mystery ball bonus
+  if(b&&b.mystery){
+    S.stats.mysteryHit=(S.stats.mysteryHit||0)+1;checkAchievement('mysteryHit',S.stats.mysteryHit);
+    const roll=Math.random();
+    if(roll<0.3){const c=5;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;playCoin();addPopup(x,y-44,'❓ +5🪙!','#cc44ff');}
+    else if(roll<0.55){addXP(10);addPopup(x,y-44,'❓ +10 XP!','#cc44ff');}
+    else if(roll<0.75){combo+=5;addPopup(x,y-44,'❓ +5 COMBO!','#cc44ff');}
+    else if(roll<0.9){spawnBall();addPopup(x,y-44,'❓ EXTRA BAL!','#cc44ff');}
+    else{const c=10;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;playCoin();addPopup(x,y-44,'❓ JACKPOT +10🪙!','#ffd700');}
+  }
+  // V14: Curveball bonus
+  if(b&&b.curve){
+    const c=2;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;
+    addPopup(x,y-44,'🌀 CURVE +2🪙','#00ddff');
+  }
+
   // Multi-ball tracking
   const activeBallCountNow=balls.filter(bl=>!bl.departing&&!bl.remove).length;
   if(activeBallCountNow>=2){S.stats.multiballHit++;checkAchievement('multiballHit',S.stats.multiballHit);}
@@ -2888,7 +2912,7 @@ function registerPoint(x,y,b){
   if(b&&b.golden){
     goldenHit++;
     S.stats.goldenBallsHit++;checkAchievement('goldenBallsHit',S.stats.goldenBallsHit);
-    const goldenCoins=Math.max(1,Math.round(5*comboMult*S.prestigeMultiplier*getDiff().coinMult));
+    const goldenCoins=Math.max(1,Math.round(5*comboMult*S.prestigeMultiplier*getDiff().coinMult*(1+(S.coinBoostTier||0)*0.1)*(frenzyActive?2:1)));
     S.coins+=goldenCoins;S.stats.totalCoins+=goldenCoins;gameCoins+=goldenCoins;coinUiEl.textContent=S.coins;playCoin();
     addToPiggyBank(goldenCoins);
     addPopup(x,y-28,'+5⭐ GOUD!','#ffd700');
@@ -2908,9 +2932,12 @@ function registerPoint(x,y,b){
 
   const coinMult=doublerActive?comboMult*2:comboMult;
   const ecBase=score%3===0?coinMult:0;
-  const ec=ecBase?Math.max(1,Math.round(ecBase*S.prestigeMultiplier*getDiff().coinMult)):0;
+  const zenMult=S.gameMode==='zen'?0.5:1;
+  const boostMult=1+(S.coinBoostTier||0)*0.1;
+  const frenzyMult=frenzyActive?2:1;
+  const ec=ecBase?Math.max(1,Math.round(ecBase*S.prestigeMultiplier*getDiff().coinMult*zenMult*boostMult*frenzyMult)):0;
   if(ec){S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;coinUiEl.textContent=S.coins;playCoin();addToPiggyBank(ec);}
-  const xpGain=Math.round((2+Math.floor(score/10))*comboMult*getDiff().xpMult);addXP(xpGain);
+  const xpGain=Math.max(1,Math.round((2+Math.floor(score/10))*comboMult*getDiff().xpMult*zenMult));addXP(xpGain);
   playHit(combo);
   triggerHitEffect(x,y);
   addPopup(x,y-28,ec?'+'+ec+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
@@ -2935,7 +2962,7 @@ function startGame(){
   shakeFrames=0;shakeAmt=0;shakeActive=false;levelUpAnim=null;
   survivalDistance=0;
   // Power-up reset
-  deactivatePowerup();powerupTimer=0;reboundActive=false;reboundTimer=0;
+  deactivatePowerup();powerupTimer=0;reboundActive=false;reboundTimer=0;frenzyActive=false;frenzyTimer=0;
   // Per-game stats reset
   gameHits=0;gameScore=0;gameCoins=0;gameCombo=0;powerupsUsed=0;goldenHit=0;scoreNoPowerup=0;
   balls=[];spawnBall();
@@ -2972,7 +2999,13 @@ function loop(){
       // Survival mode: increase speed continuously
       let survSpeedBoost=1;
       if(S.gameMode==='survival'){survSpeedBoost=1+score*0.008;if(survSpeedBoost>5)survSpeedBoost=5;}
-      b.x+=b.vx*speedMult*survSpeedBoost;b.y+=b.vy*speedMult*survSpeedBoost;b.rot+=.07;
+      const frenzyBoost=frenzyActive?1.15:1;
+      b.x+=b.vx*speedMult*survSpeedBoost*frenzyBoost;b.y+=b.vy*speedMult*survSpeedBoost*frenzyBoost;b.rot+=.07;
+      if(b.curve){
+        const perp=Math.atan2(b.vy,b.vx)+Math.PI/2;
+        const osc=Math.sin(Date.now()/150+b.curvePhase)*1.8*speedMult;
+        b.x+=Math.cos(perp)*osc;b.y+=Math.sin(perp)*osc;
+      }
       // Magnet: pull toward racket
       if(magnetActive){b.vx+=0.04*(racket.x-b.x)/Math.max(1,Math.hypot(racket.x-b.x,racket.y-b.y))*Math.hypot(racket.x-b.x,racket.y-b.y)/100;}
       if(b.cooldown>0)b.cooldown--;
@@ -2997,7 +3030,11 @@ function loop(){
           spawnBall();
         } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
         else{
-          if(comboShieldActive){
+          if(S.gameMode==='zen'){
+            combo=0;comboMult=1;
+            addPopup(b.x,b.y-28,'🧘 Rustig aan...','#88ccff');
+            b.remove=true;spawnBall();
+          } else if(comboShieldActive){
             // Feature 3: Combo shield absorbs miss
             comboShieldActive=false;combo=0;comboMult=1;
             S.stats.shieldsUsed=(S.stats.shieldsUsed||0)+1;
@@ -3015,7 +3052,9 @@ function loop(){
         const batW=22+[0,2.2,4.4,6.6][S.batWidthTier||0];
         const dx=b.x-racket.x,dy=b.y-racket.y,dist=Math.hypot(dx,dy);
         if(dist<b.r+batW){
-          if(b.bomb){triggerShake(8,6);triggerGameOver('💣 Je raakte de bom!');return;}
+          if(b.bomb){
+            if(S.gameMode==='zen'){b.remove=true;combo=0;comboMult=1;addPopup(b.x,b.y-28,'💣 Oeps!','#ff8866');spawnBall();continue;}
+            triggerShake(8,6);triggerGameOver('💣 Je raakte de bom!');return;}
           // Feature 2: Boss hit handling
           if(b.boss){
             b.bossHitsLeft--;b.flash=1;playBossHit();triggerShake(5,4);
@@ -3109,6 +3148,7 @@ function loop(){
   popups=popups.filter(p=>p.life>0);
   wrongFlash=Math.max(0,wrongFlash-.05);goodFlash=Math.max(0,goodFlash-.08);
   racketPulse=Math.max(0,racketPulse-.08);
+  if(frenzyTimer>0){frenzyTimer--;if(frenzyTimer===0)frenzyActive=false;}
   if(shake>0){shakeX=(Math.random()-.5)*shake;shakeY=(Math.random()-.5)*shake;shake*=.78;}else{shakeX=0;shakeY=0;}
   {const _ts=getTrailStyle(getBat().id);batTrail.push({x:racket.x,y:racket.y});if(batTrail.length>((_ts.upgraded||_ts.rainbow)?20:12))batTrail.shift();}
   draw();raf=requestAnimationFrame(loop);
@@ -3128,7 +3168,7 @@ function draw(){
   const map=getMap();map.drawTable(ctx,W,H);
   if(goodFlash>0){ctx.globalAlpha=goodFlash;ctx.fillStyle=map.flashGood||'#f1c40f';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
   if(wrongFlash>0){ctx.globalAlpha=wrongFlash*.35;ctx.fillStyle=map.flashBad||'#e74c3c';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
-  drawNet(map);drawParticles();balls.forEach(drawBall);drawDirectionIndicator();drawRebound();drawPowerupIndicator();
+  drawNet(map);drawParticles();balls.forEach(drawBall);drawDirectionIndicator();drawRebound();drawFrenzy();drawPowerupIndicator();
   ctx.save();
   const tStyle=getTrailStyle(getBat().id);
   const tLen=batTrail.length;
@@ -3327,7 +3367,7 @@ function drawBall(b){
   const skin=BALL_SKINS.find(s=>s.id===S.activeBallSkin)||BALL_SKINS[0];
   // Trail
   if(S.ballTrail!==false){
-    const trailCol=b.bomb?'#ff2200':(b.golden?'#ffd700':(b.powerup?'#00ffee':skin.trailColor||'#ffffff'));
+    const trailCol=b.bomb?'#ff2200':(b.golden?'#ffd700':(b.powerup?'#00ffee':(b.mystery?'#cc44ff':(b.curve?'#00ddff':skin.trailColor||'#ffffff'))));
     for(let i=0;i<b.trail.length-1;i++){
       const t=b.trail[i],a=(i+1)/b.trail.length;
       ctx.globalAlpha=a*.22;ctx.fillStyle=trailCol;ctx.beginPath();ctx.arc(t.x,t.y,b.r*.7*a,0,Math.PI*2);ctx.fill();}
@@ -3363,6 +3403,35 @@ function drawBall(b){
       ctx.fillText('✦',0,0);ctx.restore();}
     ctx.font=(b.r*.9)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('⭐',0,1);
+    ctx.restore();
+    return;
+  }
+
+  if(b.mystery){
+    // V14: Mystery ball — pulsing purple with ?
+    ctx.save();ctx.translate(b.x,b.y);ctx.scale(b.spawnT,b.spawnT);
+    const pulse=.5+.5*Math.sin(Date.now()/170);
+    ctx.shadowColor='#cc44ff';ctx.shadowBlur=12+pulse*12;
+    const g=ctx.createRadialGradient(-b.r*.3,-b.r*.3,b.r*.1,0,0,b.r);
+    g.addColorStop(0,'#dd99ff');g.addColorStop(.5,'#8822cc');g.addColorStop(1,'#330a55');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,b.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fff';ctx.font='bold '+(b.r*1.1)+'px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.save();ctx.rotate(Math.sin(Date.now()/300)*.25);ctx.fillText('?',0,1);ctx.restore();
+    ctx.restore();
+    return;
+  }
+
+  if(b.curve){
+    // V14: Curveball — skin + cyan swirl ring
+    skin.draw(ctx,b);
+    const t=Date.now()/200;
+    ctx.save();ctx.strokeStyle='rgba(0,221,255,0.8)';ctx.lineWidth=2;ctx.shadowColor='#00ddff';ctx.shadowBlur=8;
+    for(let arc=0;arc<2;arc++){
+      ctx.beginPath();ctx.arc(b.x,b.y,b.r+5,t+arc*Math.PI,t+arc*Math.PI+Math.PI*.6);ctx.stroke();}
+    ctx.shadowBlur=0;
+    ctx.font=(b.r*.7)+'px serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText('🌀',b.x,b.y-b.r-3);
     ctx.restore();
     return;
   }
@@ -3435,6 +3504,25 @@ function drawPopups(){
   ctx.globalAlpha=1;
 }
 
+function drawFrenzy(){
+  if(!frenzyActive)return;
+  const t=Date.now()/120;
+  // Orange vignette pulse
+  ctx.save();
+  const vg=ctx.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,H*.75);
+  vg.addColorStop(0,'rgba(255,100,0,0)');
+  vg.addColorStop(1,`rgba(255,80,0,${.14+.07*Math.sin(t)})`);
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+  // Banner
+  ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.font='bold 19px Orbitron,Arial';
+  const secs=Math.ceil(frenzyTimer/60);
+  ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,0.7)';
+  ctx.strokeText('🔥 FRENZY ×2 — '+secs+'s',W/2,10);
+  ctx.fillStyle=`rgba(255,${140+60*Math.sin(t)},0,1)`;
+  ctx.fillText('🔥 FRENZY ×2 — '+secs+'s',W/2,10);
+  ctx.restore();
+}
 function drawRebound(){
   if(!reboundActive)return;
   const alpha=0.4+0.2*Math.sin(Date.now()/200);
@@ -3522,9 +3610,11 @@ function triggerGameOver(reden){
   if(gameCoins>(S.stats.bestGameCoins||0))S.stats.bestGameCoins=gameCoins;
   // Survival mode record
   const isSurvival=S.gameMode==='survival';
+  const isZen=S.gameMode==='zen';
   let newSurvivalRecord=false;
   if(isSurvival&&score>(S.stats.survivalBest||0)){S.stats.survivalBest=score;newSurvivalRecord=true;}
-  if(score>S.best){S.stats.newHighscoreSet++;checkAchievement('newHighscoreSet',S.stats.newHighscoreSet);S.best=score;}
+  if(isZen){S.stats.zenGames=(S.stats.zenGames||0)+1;checkAchievement('zenGames',S.stats.zenGames);}
+  if(!isZen&&score>S.best){S.stats.newHighscoreSet++;checkAchievement('newHighscoreSet',S.stats.newHighscoreSet);S.best=score;}
   if(savedPeakCombo>(S.stats.bestCombo||0))S.stats.bestCombo=savedPeakCombo;
   // First win of the day bonus (Feature 5)
   let dailyWinBonus=0;
@@ -3534,7 +3624,7 @@ function triggerGameOver(reden){
     showToast('🎉 <strong>Eerste overwinning van de dag! +25 🪙</strong>','lvl-toast',4000);
   }
   // Insert into top 5 scores
-  S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
+  if(!isZen)S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
   S.topScores.sort((a,b)=>b.score-a.score);
   S.topScores=S.topScores.slice(0,5);
   addXP(Math.floor(score*1.5));
@@ -3548,7 +3638,7 @@ function triggerGameOver(reden){
   const isNewBest=score>0&&score===S.best;
   const xpEarned=Math.floor(score*1.5);
   overlay.innerHTML=`<div class="panel" style="max-width:400px;text-align:center">
-    <div style="font-size:1rem;color:#778;margin-bottom:4px">${isSurvival?'SURVIVAL MODE':'GAME OVER'}</div>
+    <div style="font-size:1rem;color:#778;margin-bottom:4px">${isSurvival?'SURVIVAL MODE':(isZen?'🧘 ZEN MODE':'GAME OVER')}</div>
     <div style="font-family:'Orbitron',monospace;font-size:3.5rem;color:var(--accent);line-height:1">${score}</div>
     ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">🏆 Nieuw persoonlijk record!</div>':
       (S.best>0&&!isSurvival?`<div style="color:#889;font-size:.82rem;margin:4px 0">📊 \${Math.round(score/S.best*100)}% van je record (best: \${S.best})</div>`:'')
@@ -3704,6 +3794,7 @@ function showMenu(){
     </div>
     <button class="btn btn-play" onclick="S.gameMode='classic';startGame()">▶ SPELEN</button>
     <button class="btn secondary" onclick="S.gameMode='survival';startGame()" style="padding:7px 16px;font-size:.82rem;border-radius:20px;margin:4px auto 0;display:block;background:rgba(255,80,0,0.15);border-color:rgba(255,80,0,0.5);color:#ff8844">🌪️ SURVIVAL MODE</button>
+    <button class="btn secondary" onclick="S.gameMode='zen';startGame()" style="padding:7px 16px;font-size:.82rem;border-radius:20px;margin:4px auto 0;display:block;background:rgba(80,180,255,0.12);border-color:rgba(120,200,255,0.4)">🧘 ZEN MODE</button>
     <button class="btn secondary" onclick="cycleDifficulty()" style="padding:5px 16px;font-size:.78rem;border-radius:20px;margin:6px auto 0;display:block" title="Klik om moeilijkheid te wisselen">${getDiff().emoji} ${getDiff().name}</button>
     <div class="menu-grid">
       <button class="btn secondary" onclick="switchPanel(showInventory)">🎒 Inventaris</button>
