@@ -1982,6 +1982,7 @@ function defaultState(){
     lastWinDate:'',
     todayGames:0,todayDate:'',todayBest:0,
     gameMode:'classic',
+    language:'en',
     ballTrail:true,
     batXP:{},
     calendarDay:1,
@@ -2041,6 +2042,7 @@ if(S.ballTrail==null)S.ballTrail=true;
 if(!S.batXP)S.batXP={};
 if(S.calendarDay==null)S.calendarDay=1;
 if(S.calendarDate==null)S.calendarDate='';
+if(S.language==null)S.language='en';
 if(S.stats.bossDefeated==null)S.stats.bossDefeated=0;
 if(S.stats.shieldsUsed==null)S.stats.shieldsUsed=0;
 if(S.stats.zenGames==null)S.stats.zenGames=0;
@@ -2603,12 +2605,8 @@ let activePowerup=null,powerupTimer=0,shieldActive=false,doublerActive=false,slo
 let slowMoActive=false,slowMoTimer=0;
 // Feature 2: Boss ball vars
 let bossActive=false,bossHitsLeft=0;
-// Feature 3: Combo shield
-let comboShieldActive=false;
 // Feature 9: Score multiplier meter
 let scoreMeter=0.0,scoreMeterBonus=false,scoreMeterBonusTimer=0;
-// Survival mode
-let survivalDistance=0;
 // Daily challenge per-game stats
 let gameHits=0,gameScore=0,gameCoins=0,gameCombo=0,powerupsUsed=0,goldenHit=0,dailyGames=0,scoreNoPowerup=0;
 // Floating score texts
@@ -2619,6 +2617,55 @@ function triggerShake(frames,amount){shakeFrames=frames;shakeAmt=amount;}
 // Level-up animation
 let levelUpAnim=null;
 
+
+// ── LANGUAGE & TRANSLATIONS ───────────────────────────────────────────────────
+const TRANSLATIONS={
+  play:         {en:'\u25b6 PLAY',          nl:'\u25b6 SPELEN',        de:'\u25b6 SPIELEN',      fr:'\u25b6 JOUER',         es:'\u25b6 JUGAR',        zh:'\u25b6 \u5f00\u59cb',    ru:'\u25b6 \u0418\u0413\u0420\u0410\u0422\u042c'},
+  inventory:    {en:'\ud83c\udf92 Inventory',     nl:'\ud83c\udf92 Inventaris',   de:'\ud83c\udf92 Inventar',    fr:'\ud83c\udf92 Inventaire',   es:'\ud83c\udf92 Inventario',  zh:'\ud83c\udf92 \u80cc\u5305',   ru:'\ud83c\udf92 \u0418\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044c'},
+  shop:         {en:'\ud83d\uded2 Shop',          nl:'\ud83d\uded2 Winkel',       de:'\ud83d\uded2 Shop',        fr:'\ud83d\uded2 Boutique',     es:'\ud83d\uded2 Tienda',      zh:'\ud83d\uded2 \u5546\u5e97',   ru:'\ud83d\uded2 \u041c\u0430\u0433\u0430\u0437\u0438\u043d'},
+  wheel:        {en:'\ud83c\udfa1 Lucky Wheel',   nl:'\ud83c\udfa1 Gelukrad',     de:'\ud83c\udfa1 Gl\u00fcckswiel', fr:'\ud83c\udfa1 Roue chance',  es:'\ud83c\udfa1 Ruleta',      zh:'\ud83c\udfa1 \u5e78\u8fd0\u8f6e', ru:'\ud83c\udfa1 \u041a\u043e\u043b\u0435\u0441\u043e'},
+  daily:        {en:'\ud83d\udcc5 Daily',         nl:'\ud83d\udcc5 Dagelijks',    de:'\ud83d\udcc5 T\u00e4glich',     fr:'\ud83d\udcc5 Quotidien',    es:'\ud83d\udcc5 Diario',      zh:'\ud83d\udcc5 \u6bcf\u65e5',   ru:'\ud83d\udcc5 \u0415\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u043e'},
+  achievements: {en:'\ud83c\udfc6 Achievements',  nl:'\ud83c\udfc6 Prestaties',   de:'\ud83c\udfc6 Erfolge',     fr:'\ud83c\udfc6 Succ\u00e8s',       es:'\ud83c\udfc6 Logros',      zh:'\ud83c\udfc6 \u6210\u5c31',   ru:'\ud83c\udfc6 \u0414\u043e\u0441\u0442\u0438\u0436\u0435\u043d\u0438\u044f'},
+  crates:       {en:'\ud83d\udce6 Crates',        nl:'\ud83d\udce6 Kisten',       de:'\ud83d\udce6 Kisten',      fr:'\ud83d\udce6 Caisses',      es:'\ud83d\udce6 Cajas',       zh:'\ud83d\udce6 \u7bb1\u5b50',   ru:'\ud83d\udce6 \u042f\u0449\u0438\u043a\u0438'},
+  topscores:    {en:'\ud83c\udfc5 Top Scores',    nl:'\ud83c\udfc5 Top Scores',   de:'\ud83c\udfc5 Bestenliste', fr:'\ud83c\udfc5 Meilleurs',    es:'\ud83c\udfc5 Puntajes',    zh:'\ud83c\udfc5 \u6392\u884c\u699c', ru:'\ud83c\udfc5 \u0420\u0435\u043a\u043e\u0440\u0434\u044b'},
+  stats:        {en:'\ud83d\udcca Statistics',    nl:'\ud83d\udcca Statistieken', de:'\ud83d\udcca Statistik',   fr:'\ud83d\udcca Statistiques', es:'\ud83d\udcca Estad\u00edsticas',zh:'\ud83d\udcca \u7edf\u8ba1',   ru:'\ud83d\udcca \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0430'},
+  profile:      {en:'\ud83d\udc64 Profile',       nl:'\ud83d\udc64 Profiel',      de:'\ud83d\udc64 Profil',      fr:'\ud83d\udc64 Profil',       es:'\ud83d\udc64 Perfil',      zh:'\ud83d\udc64 \u4e2a\u4eba',   ru:'\ud83d\udc64 \u041f\u0440\u043e\u0444\u0438\u043b\u044c'},
+  settings:     {en:'\u2699\ufe0f Settings',      nl:'\u2699\ufe0f Instellingen', de:'\u2699\ufe0f Einstellungen',fr:'\u2699\ufe0f Param\u00e8tres',  es:'\u2699\ufe0f Ajustes',    zh:'\u2699\ufe0f \u8bbe\u7f6e',   ru:'\u2699\ufe0f \u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438'},
+  login_cal:    {en:'\ud83d\uddd3\ufe0f Login Calendar',nl:'\ud83d\uddd3\ufe0f Login Kalender',de:'\ud83d\uddd3\ufe0f Login Kalender',fr:'\ud83d\uddd3\ufe0f Calendrier', es:'\ud83d\uddd3\ufe0f Calendario', zh:'\ud83d\uddd3\ufe0f \u767b\u5f55',  ru:'\ud83d\uddd3\ufe0f \u041a\u0430\u043b\u0435\u043d\u0434\u0430\u0440\u044c'},
+  back:         {en:'\u2190 Back',           nl:'\u2190 Terug',         de:'\u2190 Zur\u00fcck',      fr:'\u2190 Retour',        es:'\u2190 Atr\u00e1s',        zh:'\u2190 \u8fd4\u56de',    ru:'\u2190 \u041d\u0430\u0437\u0430\u0434'},
+  game_over:    {en:'GAME OVER',        nl:'GAME OVER',       de:'SPIEL VORBEI',  fr:'PARTIE TERMIN\u00c9E', es:'JUEGO TERMINADO',zh:'\u6e38\u620f\u7ed3\u675f',  ru:'\u0418\u0413\u0420\u0410 \u041e\u041a\u041e\u041d\u0427\u0415\u041d\u0410'},
+  new_record:   {en:'\ud83c\udfc6 New personal record!',nl:'\ud83c\udfc6 Nieuw persoonlijk record!',de:'\ud83c\udfc6 Neuer Rekord!',fr:'\ud83c\udfc6 Nouveau record!',es:'\ud83c\udfc6 \u00a1Nuevo r\u00e9cord!',zh:'\ud83c\udfc6 \u65b0\u8bb0\u5f55\uff01',ru:'\ud83c\udfc6 \u041d\u043e\u0432\u044b\u0439 \u0440\u0435\u043a\u043e\u0440\u0434!'},
+  hits:         {en:'Hits',             nl:'Treffers',        de:'Treffer',       fr:'Frappes',         es:'Golpes',         zh:'\u51fb\u7403',      ru:'\u0423\u0434\u0430\u0440\u044b'},
+  best_combo:   {en:'Best Combo',       nl:'Beste Combo',     de:'Bester Combo',  fr:'Meilleur combo',  es:'Mejor combo',    zh:'\u6700\u4f73\u8fde\u51fb',  ru:'\u041b\u0443\u0447\u0448\u0438\u0439 \u043a\u043e\u043c\u0431\u043e'},
+  coins:        {en:'Coins',            nl:'Muntjes',         de:'M\u00fcnzen',        fr:'Pi\u00e8ces',          es:'Monedas',        zh:'\u786c\u5e01',      ru:'\u041c\u043e\u043d\u0435\u0442\u044b'},
+  xp:           {en:'XP',              nl:'XP',              de:'EP',            fr:'XP',              es:'XP',             zh:'\u7ecf\u9a8c',      ru:'\u041e\u043f\u044b\u0442'},
+  paused:       {en:'Paused',           nl:'Gepauzeerd',      de:'Pausiert',      fr:'En pause',        es:'Pausado',        zh:'\u6682\u505c',      ru:'\u041f\u0430\u0443\u0437\u0430'},
+  resume:       {en:'\u25b6 Continue',       nl:'\u25b6 Doorgaan',      de:'\u25b6 Weiter',      fr:'\u25b6 Continuer',     es:'\u25b6 Continuar',    zh:'\u25b6 \u7ee7\u7eed',    ru:'\u25b6 \u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c'},
+  stop:         {en:'Stop',             nl:'Stoppen',         de:'Stoppen',       fr:'Arr\u00eater',         es:'Parar',          zh:'\u505c\u6b62',      ru:'\u0421\u0442\u043e\u043f'},
+  play_again:   {en:'\u25b6 Play Again',     nl:'\u25b6 Opnieuw',       de:'\u25b6 Nochmal',     fr:'\u25b6 Rejouer',      es:'\u25b6 Otra vez',     zh:'\u25b6 \u518d\u73a9',    ru:'\u25b6 \u0421\u043d\u043e\u0432\u0430'},
+  menu_btn:     {en:'\u2630 Menu',           nl:'\u2630 Menu',          de:'\u2630 Men\u00fc',        fr:'\u2630 Menu',         es:'\u2630 Men\u00fa',         zh:'\u2630 \u83dc\u5355',    ru:'\u2630 \u041c\u0435\u043d\u044e'},
+  score:        {en:'Score',            nl:'Score',           de:'Punkte',        fr:'Score',           es:'Puntuaci\u00f3n',     zh:'\u5206\u6570',      ru:'\u0421\u0447\u0451\u0442'},
+  best:         {en:'Best',             nl:'Beste',           de:'Beste',         fr:'Meilleur',        es:'Mejor',          zh:'\u6700\u4f73',      ru:'\u0420\u0435\u043a\u043e\u0440\u0434'},
+  difficulty:   {en:'Difficulty',       nl:'Moeilijkheid',    de:'Schwierigkeit', fr:'Difficult\u00e9',      es:'Dificultad',     zh:'\u96be\u5ea6',      ru:'\u0421\u043b\u043e\u0436\u043d\u043e\u0441\u0442\u044c'},
+  sfx:          {en:'\ud83d\udd0a Sound Effects', nl:'\ud83d\udd0a Geluidseffecten',de:'\ud83d\udd0a Soundeffekte',fr:'\ud83d\udd0a Effets sonores',es:'\ud83d\udd0a Efectos sonido',zh:'\ud83d\udd0a \u97f3\u6548',ru:'\ud83d\udd0a \u0417\u0432\u0443\u043a\u0438'},
+  music:        {en:'\ud83c\udfb5 Music',         nl:'\ud83c\udfb5 Muziek',       de:'\ud83c\udfb5 Musik',      fr:'\ud83c\udfb5 Musique',      es:'\ud83c\udfb5 M\u00fasica',      zh:'\ud83c\udfb5 \u97f3\u4e50',   ru:'\ud83c\udfb5 \u041c\u0443\u0437\u044b\u043a\u0430'},
+  mute_all:     {en:'\ud83d\udd07 Mute all',      nl:'\ud83d\udd07 Alles gedempt',de:'\ud83d\udd07 Stummschalten',fr:'\ud83d\udd07 Tout couper',es:'\ud83d\udd07 Silenciar',   zh:'\ud83d\udd07 \u9759\u97f3',   ru:'\ud83d\udd07 \u0412\u044b\u043a\u043b. \u0437\u0432\u0443\u043a'},
+  bgm_track:    {en:'\ud83c\udfb5 Music track',   nl:'\ud83c\udfb5 Muziek track', de:'\ud83c\udfb5 Musiktrack', fr:'\ud83c\udfb5 Piste musicale',es:'\ud83c\udfb5 Pista musical',zh:'\ud83c\udfb5 \u66f2\u76ee',  ru:'\ud83c\udfb5 \u0422\u0440\u0435\u043a'},
+  hit_effect:   {en:'\ud83d\udca5 Hit effect',    nl:'\ud83d\udca5 Treffereffect',de:'\ud83d\udca5 Treffereffekt',fr:'\ud83d\udca5 Effet frappe', es:'\ud83d\udca5 Efecto golpe',zh:'\ud83d\udca5 \u51fb\u7403\u6548\u679c',ru:'\ud83d\udca5 \u042d\u0444\u0444\u0435\u043a\u0442 \u0443\u0434\u0430\u0440\u0430'},
+  ball_trail:   {en:'\ud83c\udf1f Ball trail',    nl:'\ud83c\udf1f Ballentrail',  de:'\ud83c\udf1f Ballspur',   fr:'\ud83c\udf1f Tra\u00een\u00e9e balle',es:'\ud83c\udf1f Estela pelota',zh:'\ud83c\udf1f \u7403\u8ff9',  ru:'\ud83c\udf1f \u0428\u043b\u0435\u0439\u0444 \u043c\u044f\u0447\u0430'},
+  language:     {en:'\ud83c\udf10 Language',      nl:'\ud83c\udf10 Taal',         de:'\ud83c\udf10 Sprache',    fr:'\ud83c\udf10 Langue',       es:'\ud83c\udf10 Idioma',      zh:'\ud83c\udf10 \u8bed\u8a00',   ru:'\ud83c\udf10 \u042f\u0437\u044b\u043a'},
+  on:           {en:'On',               nl:'Aan',             de:'An',            fr:'Actif',           es:'Activado',       zh:'\u5f00',        ru:'\u0412\u043a\u043b'},
+  off:          {en:'Off',              nl:'Uit',             de:'Aus',           fr:'D\u00e9sactiv\u00e9',       es:'Desactivado',    zh:'\u5173',        ru:'\u0412\u044b\u043a\u043b'},
+  score_lbl:    {en:'Score',            nl:'Score',           de:'Punkte',        fr:'Score',           es:'Puntuaci\u00f3n',     zh:'\u5206\u6570',      ru:'\u0421\u0447\u0451\u0442'},
+  combo_lbl:    {en:'Combo',            nl:'Combo',           de:'Combo',         fr:'Combo',           es:'Combo',          zh:'\u8fde\u51fb',      ru:'\u041a\u043e\u043c\u0431\u043e'},
+  streak_lbl:   {en:'Login Streak',     nl:'Login Streak',    de:'Einlogg-Streak',fr:'Connexion',       es:'Racha login',    zh:'\u767b\u5f55\u8fde\u51fb',  ru:'\u0421\u0435\u0440\u0438\u044f \u0432\u0445\u043e\u0434\u043e\u0432'},
+  day_lbl:      {en:'Day',              nl:'Dag',             de:'Tag',           fr:'Jour',            es:'D\u00eda',            zh:'\u5929',        ru:'\u0414\u0435\u043d\u044c'},
+  bonus_lbl:    {en:'Bonus',            nl:'Bonus',           de:'Bonus',         fr:'Bonus',           es:'Bonus',          zh:'\u5956\u52b1',      ru:'\u0411\u043e\u043d\u0443\u0441'},
+};
+function t(key){
+  const lang=typeof S!=='undefined'&&S&&S.language?S.language:'en';
+  return(TRANSLATIONS[key]&&(TRANSLATIONS[key][lang]||TRANSLATIONS[key]['en']))||key;
+}
 canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect(),sx=W/r.width,sy=H/r.height;
   racket.x=(e.clientX-r.left)*sx;racket.y=(e.clientY-r.top)*sy;
@@ -2648,20 +2695,20 @@ function pauseGame(){
   gameState='paused';
   cancelAnimationFrame(raf);
   stopBGM();
-  const modeName=S.gameMode==='survival'?'🌪️ Survival':(S.gameMode==='zen'?'🧘 Zen':'🏓 Klassiek');
+  const modeName='🏓 '+getDiff().name;
   overlay.innerHTML=`<div class="panel" style="max-width:360px">
     <div style="font-size:2rem">⏸️</div>
-    <h1 style="font-size:1.5rem">Gepauzeerd</h1>
-    <p class="subtitle" style="margin-bottom:8px">${modeName} · ${getDiff().emoji} ${getDiff().name}</p>
+    <h1 style="font-size:1.5rem">${t('paused')}</h1>
+    <p class="subtitle" style="margin-bottom:8px">${getDiff().emoji} ${getDiff().name}</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 14px">
-      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${score}</div><div style="font-size:.7rem;color:#556">Score</div></div>
-      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:#ff9500">${combo}</div><div style="font-size:.7rem;color:#556">Combo</div></div>
-      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${gameHits}</div><div style="font-size:.7rem;color:#556">Treffers</div></div>
-      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--coin)">${gameCoins}</div><div style="font-size:.7rem;color:#556">Muntjes</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${score}</div><div style="font-size:.7rem;color:#556">${t('score_lbl')}</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:#ff9500">${combo}</div><div style="font-size:.7rem;color:#556">${t('combo_lbl')}</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${gameHits}</div><div style="font-size:.7rem;color:#556">${t('hits')}</div></div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--coin)">${gameCoins}</div><div style="font-size:.7rem;color:#556">${t('coins')}</div></div>
     </div>
     <div class="btnrow">
-      <button class="btn" onclick="resumeGame()">▶ Doorgaan</button>
-      <button class="btn orange" onclick="triggerGameOver('Spel gestopt.')">Stoppen</button>
+      <button class="btn" onclick="resumeGame()">${t('resume')}</button>
+      <button class="btn orange" onclick="triggerGameOver('Spel gestopt.')">${t('stop')}</button>
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -2900,8 +2947,6 @@ function registerPoint(x,y,b){
   const prevMult=comboMult;
   if(combo>=20)comboMult=4;else if(combo>=10)comboMult=3;else if(combo>=5)comboMult=2;else comboMult=1;
   if(comboMult>prevMult){playComboMilestone();addPopup(x,y-44,'+COMBO x'+comboMult+'!','#ff9500');showToast('🔥 Combo x'+comboMult+'!');}
-  // Feature 3: Combo Shield at combo 10
-  if(combo>=10&&!comboShieldActive){comboShieldActive=true;showToast('🛡️ Combo Shield actief!','ach-toast',3000);}
   // Combo coin bonuses
   if(combo===15){const bc=3;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x15! +3 🪙');}
   else if(combo===25){const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x25! +5 🪙');}
@@ -2957,12 +3002,11 @@ function registerPoint(x,y,b){
 
   const coinMult=doublerActive?comboMult*2:comboMult;
   const ecBase=score%3===0?coinMult:0;
-  const zenMult=S.gameMode==='zen'?0.5:1;
   const boostMult=1+(S.coinBoostTier||0)*0.1;
   const frenzyMult=frenzyActive?2:1;
-  const ec=ecBase?Math.max(1,Math.round(ecBase*S.prestigeMultiplier*getDiff().coinMult*zenMult*boostMult*frenzyMult)):0;
+  const ec=ecBase?Math.max(1,Math.round(ecBase*S.prestigeMultiplier*getDiff().coinMult*boostMult*frenzyMult)):0;
   if(ec){S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;coinUiEl.textContent=S.coins;playCoin();addToPiggyBank(ec);}
-  const xpGain=Math.max(1,Math.round((2+Math.floor(score/10))*comboMult*getDiff().xpMult*zenMult));addXP(xpGain);
+  const xpGain=Math.max(1,Math.round((2+Math.floor(score/10))*comboMult*getDiff().xpMult));addXP(xpGain);
   playHit(combo);
   triggerHitEffect(x,y);
   addPopup(x,y-28,ec?'+'+ec+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
@@ -2985,7 +3029,6 @@ function startGame(){
   racketPulse=0;racketSpin=0;lastDirIdx=-1;dirStreak=0;effectBag=[];
   combo=0;comboMult=1;peakCombo=0;batTrail=[];
   shakeFrames=0;shakeAmt=0;shakeActive=false;levelUpAnim=null;
-  survivalDistance=0;
   // Power-up reset
   deactivatePowerup();powerupTimer=0;reboundActive=false;reboundTimer=0;frenzyActive=false;frenzyTimer=0;
   // Per-game stats reset
@@ -2999,8 +3042,7 @@ function startGame(){
 }
 
 function updateScore(){
-  const survTxt=S.gameMode==='survival'?`  ·  🌪️ Survival: ${score}`:'';
-  scEl.textContent='Score: '+score+(S.best>0?'   ·   Beste: '+S.best:'')+survTxt;
+  scEl.textContent=t('score')+': '+score+(S.best>0?'   ·   '+t('best')+': '+S.best:'');
   coinUiEl.textContent=S.coins;
 }
 
@@ -3021,11 +3063,8 @@ function loop(){
     const b=balls[i];
     if(!b.departing){
       const speedMult=(slowmoActive||slowMoActive)?0.35:1;
-      // Survival mode: increase speed continuously
-      let survSpeedBoost=1;
-      if(S.gameMode==='survival'){survSpeedBoost=1+score*0.008;if(survSpeedBoost>5)survSpeedBoost=5;}
       const frenzyBoost=frenzyActive?1.15:1;
-      b.x+=b.vx*speedMult*survSpeedBoost*frenzyBoost;b.y+=b.vy*speedMult*survSpeedBoost*frenzyBoost;b.rot+=.07;
+      b.x+=b.vx*speedMult*frenzyBoost;b.y+=b.vy*speedMult*frenzyBoost;b.rot+=.07;
       if(b.curve){
         const perp=Math.atan2(b.vy,b.vx)+Math.PI/2;
         const osc=Math.sin(Date.now()/150+b.curvePhase)*1.8*speedMult;
@@ -3055,22 +3094,7 @@ function loop(){
           spawnBall();
         } else if(correctSide(b.dir,side)){registerPoint(b.x,b.y,b);b.remove=true;}
         else{
-          if(S.gameMode==='zen'){
-            combo=0;comboMult=1;
-            addPopup(b.x,b.y-28,'🧘 Rustig aan...','#88ccff');
-            b.remove=true;spawnBall();
-          } else if(comboShieldActive){
-            // Feature 3: Combo shield absorbs miss
-            comboShieldActive=false;combo=0;comboMult=1;
-            S.stats.shieldsUsed=(S.stats.shieldsUsed||0)+1;
-            goodFlash=0.4;
-            playShieldBreak();
-            addPopup(b.x,b.y-28,'🛡️ Shield verbroken!','#44ff88');
-            showToast('🛡️ Shield verbroken! Combo gereset.');
-            b.remove=true;spawnBall();
-          } else {
-            triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;
-          }
+          triggerGameOver('De bal ging er aan de verkeerde kant uit!');return;
         }
       }
       else if(b.cooldown<=0){
@@ -3078,7 +3102,6 @@ function loop(){
         const dx=b.x-racket.x,dy=b.y-racket.y,dist=Math.hypot(dx,dy);
         if(dist<b.r+batW){
           if(b.bomb){
-            if(S.gameMode==='zen'){b.remove=true;combo=0;comboMult=1;addPopup(b.x,b.y-28,'💣 Oeps!','#ff8866');spawnBall();continue;}
             triggerShake(8,6);triggerGameOver('💣 Je raakte de bom!');return;}
           // Feature 2: Boss hit handling
           if(b.boss){
@@ -3122,10 +3145,10 @@ function loop(){
               // Shield absorbs wrong hit
               shieldActive=false;activePowerup=null;powerupTimer=0;
               const dot2=b.vx*nx+b.vy*ny;b.vx-=2*dot2*nx;b.vy-=2*dot2*ny;b.cooldown=8;
-              combo=0;comboMult=1;comboShieldActive=false;triggerWrongEffect(b.x,b.y);
+              combo=0;comboMult=1;triggerWrongEffect(b.x,b.y);
               showToast('🛡️ Schild geabsorbeerd!');
             } else {
-              const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;comboShieldActive=false;playWrong();
+              const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.cooldown=8;wrongFlash=1;triggerWrongEffect(b.x,b.y);combo=0;comboMult=1;playWrong();
             }
           }
         }
@@ -3239,16 +3262,6 @@ function draw(){
     ctx.font='bold 15px Orbitron,Arial';ctx.fillStyle='#ff8800';
     ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.strokeText('2 BALLEN!',W/2,6);
     ctx.fillText('2 BALLEN!',W/2,6);
-    ctx.restore();
-  }
-  // Survival mode counter
-  if(S.gameMode==='survival'){
-    ctx.save();ctx.textAlign='center';ctx.textBaseline='top';
-    ctx.font='bold 13px Orbitron,Arial';ctx.fillStyle='#ff8844';
-    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.7)';
-    const survText=`🌪️ ${score} | Record: ${S.stats.survivalBest||0}`;
-    ctx.strokeText(survText,W/2,activeBalls.length>=2?26:6);
-    ctx.fillText(survText,W/2,activeBalls.length>=2?26:6);
     ctx.restore();
   }
   // Speed indicator
@@ -3579,13 +3592,6 @@ function drawPowerupIndicator(){
     ctx.strokeText('⏱ SLOW MOTION',W/2,32);ctx.fillText('⏱ SLOW MOTION',W/2,32);
     ctx.restore();
   }
-  // Feature 3: Draw combo shield indicator
-  if(comboShieldActive){
-    ctx.save();ctx.textAlign='right';ctx.textBaseline='bottom';
-    ctx.font='bold 18px serif';ctx.fillStyle='#44ff88';
-    ctx.shadowColor='#44ff88';ctx.shadowBlur=8;
-    ctx.fillText('🛡️',W-14,H-80);ctx.shadowBlur=0;ctx.restore();
-  }
   if(!activePowerup||powerupTimer<=0)return;
   const puColors={slowmo:'#00ffff',shield:'#4488ff',magnet:'#ff8800',doubler:'#ffd700',rebound:'#00aaff',slow_mo:'#00aaff'};
   const puIcons={slowmo:'⏱️',shield:'🛡️',magnet:'🧲',doubler:'💰',rebound:'🔄',slow_mo:'⏱'};
@@ -3642,13 +3648,7 @@ function triggerGameOver(reden){
   if(score>=20)S.stats.wins=(S.stats.wins||0)+1;
   checkGamesMilestone();
   if(gameCoins>(S.stats.bestGameCoins||0))S.stats.bestGameCoins=gameCoins;
-  // Survival mode record
-  const isSurvival=S.gameMode==='survival';
-  const isZen=S.gameMode==='zen';
-  let newSurvivalRecord=false;
-  if(isSurvival&&score>(S.stats.survivalBest||0)){S.stats.survivalBest=score;newSurvivalRecord=true;}
-  if(isZen){S.stats.zenGames=(S.stats.zenGames||0)+1;checkAchievement('zenGames',S.stats.zenGames);}
-  if(!isZen&&score>S.best){S.stats.newHighscoreSet++;checkAchievement('newHighscoreSet',S.stats.newHighscoreSet);S.best=score;}
+  if(score>S.best){S.stats.newHighscoreSet++;checkAchievement('newHighscoreSet',S.stats.newHighscoreSet);S.best=score;}
   if(savedPeakCombo>(S.stats.bestCombo||0))S.stats.bestCombo=savedPeakCombo;
   // First win of the day bonus (Feature 5)
   let dailyWinBonus=0;
@@ -3658,7 +3658,7 @@ function triggerGameOver(reden){
     showToast('🎉 <strong>Eerste overwinning van de dag! +25 🪙</strong>','lvl-toast',4000);
   }
   // Insert into top 5 scores
-  if(!isZen)S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
+  S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
   S.topScores.sort((a,b)=>b.score-a.score);
   S.topScores=S.topScores.slice(0,5);
   addXP(Math.floor(score*1.5));
@@ -3671,40 +3671,39 @@ function triggerGameOver(reden){
 
   const isNewBest=score>0&&score===S.best;
   const xpEarned=Math.floor(score*1.5);
-  overlay.innerHTML=`${isNewBest&&!isZen?confettiHTML():''}<div class="panel" style="max-width:400px;text-align:center">
-    <div style="font-size:1rem;color:#778;margin-bottom:4px">${isSurvival?'SURVIVAL MODE':(isZen?'🧘 ZEN MODE':'GAME OVER')}</div>
+  overlay.innerHTML=`${isNewBest?confettiHTML():''}<div class="panel" style="max-width:400px;text-align:center">
+    <div style="font-size:1rem;color:#778;margin-bottom:4px">${t('game_over')}</div>
     <div style="font-family:'Orbitron',monospace;font-size:3.5rem;color:var(--accent);line-height:1">${score}</div>
-    ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">🏆 Nieuw persoonlijk record!</div>':
-      (S.best>0&&!isSurvival?`<div style="color:#889;font-size:.82rem;margin:4px 0">📊 \${Math.round(score/S.best*100)}% van je record (best: \${S.best})</div>`:'')
+    ${isNewBest?'<div style="color:var(--coin);font-weight:700;margin:6px 0">'+t('new_record')+'</div>':
+      (S.best>0?`<div style="color:#889;font-size:.82rem;margin:4px 0">📊 \${Math.round(score/S.best*100)}% van je \${t('best').toLowerCase()} (\${S.best})</div>`:'')
     }
-    ${isSurvival&&newSurvivalRecord?'<div style="color:#ff8800;font-weight:700;margin:6px 0">🌪️ Survival Record!</div>':''}
     <div style="font-size:.8rem;color:#556;margin:4px 0">${reden}</div>
-    <div style="font-size:.78rem;color:#667;margin:2px 0">Moeilijkheid: ${getDiff().emoji} ${getDiff().name}</div>
+    <div style="font-size:.78rem;color:#667;margin:2px 0">${t('difficulty')}: ${getDiff().emoji} ${getDiff().name}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0">
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
         <div style="font-size:1.2rem">🏓</div>
         <div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${gameHits}</div>
-        <div style="font-size:.72rem;color:#556">Treffers</div>
+        <div style="font-size:.72rem;color:#556">${t('hits')}</div>
       </div>
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
         <div style="font-size:1.2rem">🔥</div>
         <div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${savedPeakCombo}</div>
-        <div style="font-size:.72rem;color:#556">Beste Combo</div>
+        <div style="font-size:.72rem;color:#556">${t('best_combo')}</div>
       </div>
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
         <div style="font-size:1.2rem">🪙</div>
         <div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--coin)">${ec+gameCoins}</div>
-        <div style="font-size:.72rem;color:#556">Muntjes</div>
+        <div style="font-size:.72rem;color:#556">${t('coins')}</div>
       </div>
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
         <div style="font-size:1.2rem">⭐</div>
         <div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:#00ccff">${xpEarned}</div>
-        <div style="font-size:.72rem;color:#556">XP</div>
+        <div style="font-size:.72rem;color:#556">${t('xp')}</div>
       </div>
     </div>
     <div class="btnrow">
-      <button class="btn" onclick="startGame()">▶ Opnieuw</button>
-      <button class="btn orange" onclick="showMenu()">☰ Menu</button>
+      <button class="btn" onclick="startGame()">${t('play_again')}</button>
+      <button class="btn orange" onclick="showMenu()">${t('menu_btn')}</button>
     </div>
     <button onclick="copyScore()" style="margin-top:10px;background:rgba(255,255,255,0.07);color:#c8ffe8;border:1px solid rgba(0,255,153,0.25);border-radius:20px;padding:7px 18px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer">📋 Score kopiëren</button>
   </div>`;
@@ -3826,22 +3825,21 @@ function showMenu(){
       ${todayGamesTxt?`<span style="color:#aaddff;font-size:.75rem">${todayGamesTxt}</span>`:''}
       ${todayBestTxt?`<span style="color:#ffcc44;font-size:.75rem">${todayBestTxt}</span>`:''}
     </div>
-    <button class="btn btn-play" onclick="S.gameMode='classic';startGame()">▶ SPELEN</button>
-    <button class="btn secondary" onclick="S.gameMode='survival';startGame()" style="padding:7px 16px;font-size:.82rem;border-radius:20px;margin:4px auto 0;display:block;background:rgba(255,80,0,0.15);border-color:rgba(255,80,0,0.5);color:#ff8844">🌪️ SURVIVAL MODE</button>
-    <button class="btn secondary" onclick="S.gameMode='zen';startGame()" style="padding:7px 16px;font-size:.82rem;border-radius:20px;margin:4px auto 0;display:block;background:rgba(80,180,255,0.12);border-color:rgba(120,200,255,0.4)">🧘 ZEN MODE</button>
-    <button class="btn secondary" onclick="cycleDifficulty()" style="padding:5px 16px;font-size:.78rem;border-radius:20px;margin:6px auto 0;display:block" title="Klik om moeilijkheid te wisselen">${getDiff().emoji} ${getDiff().name}</button>
+    <button class="btn btn-play" onclick="startGame()">${t('play')}</button>
+    <button class="btn secondary" onclick="cycleDifficulty()" style="padding:5px 16px;font-size:.78rem;border-radius:20px;margin:6px auto 0;display:block" title="${t('difficulty')}">${getDiff().emoji} ${getDiff().name}</button>
     <div class="menu-grid">
-      <button class="btn secondary" onclick="switchPanel(showInventory)">🎒 Inventaris</button>
-      <button class="btn secondary" onclick="switchPanel(showShop)">🛒 Winkel</button>
-      <button class="btn purple" onclick="switchPanel(showBP)">⚡ Smash Seizoen</button>
-      <button class="btn secondary" onclick="switchPanel(showWheel)">🎡 Gelukrad</button>
-      <button class="btn secondary" onclick="switchPanel(showChallenges)">📅 Dagelijks</button>
-      <button class="btn secondary" onclick="switchPanel(showAchievements)">🏆 Prestaties</button>
-      <button class="btn secondary" onclick="switchPanel(showLoot)">📦 Kisten</button>
-      <button class="btn secondary" onclick="switchPanel(showTopScores)">🏅 Top Scores</button>
-      <button class="btn secondary" onclick="switchPanel(showStats)">📊 Statistieken</button>
-      <button class="btn secondary" onclick="switchPanel(showProfile)">👤 Profiel</button>
-      <button class="btn secondary" onclick="switchPanel(showSettings)">⚙️ Instellingen</button>
+      <button class="btn secondary" onclick="switchPanel(showInventory)">${t('inventory')}</button>
+      <button class="btn secondary" onclick="switchPanel(showShop)">${t('shop')}</button>
+      <button class="btn secondary" onclick="switchPanel(showBP)">⚡ Smash Seizoen</button>
+      <button class="btn secondary" onclick="switchPanel(showWheel)">${t('wheel')}</button>
+      <button class="btn secondary" onclick="switchPanel(showChallenges)">${t('daily')}</button>
+      <button class="btn secondary" onclick="switchPanel(showAchievements)">${t('achievements')}</button>
+      <button class="btn secondary" onclick="switchPanel(showLoot)">${t('crates')}</button>
+      <button class="btn secondary" onclick="switchPanel(showTopScores)">${t('topscores')}</button>
+      <button class="btn secondary" onclick="switchPanel(showStats)">${t('stats')}</button>
+      <button class="btn secondary" onclick="switchPanel(showProfile)">${t('profile')}</button>
+      <button class="btn secondary" onclick="switchPanel(showSettings)">${t('settings')}</button>
+      <button class="btn secondary" onclick="switchPanel(showLoginCalendar)">${t('login_cal')}</button>
       ${S.level>=20?`<button class="btn gold" onclick="switchPanel(showPrestige)" style="grid-column:span 2">⚡ Prestige (Lv.MAX)</button>`:''}
     </div>
   </div>`;
@@ -4280,43 +4278,50 @@ function showProfile(){
 }
 function showSettings(){
   gameState='settings';startMenuLoop();
+  const langNames={en:'English',nl:'Nederlands',de:'Deutsch',fr:'Fran\u00e7ais',es:'Espa\u00f1ol',zh:'\u4e2d\u6587',ru:'\u0420\u0443\u0441\u0441\u043a\u0438\u0439'};
   overlay.innerHTML=`<div class="panel" style="max-width:420px">
-    <h1 style="font-size:1.4rem">⚙️ Instellingen</h1>
+    <h1 style="font-size:1.4rem">\u2699\ufe0f ${t('settings')}</h1>
     <div class="settings-row">
-      <label>🔊 Geluidseffecten</label>
+      <label>${t('sfx')}</label>
       <input type="range" min="0" max="1" step="0.05" value="${S.sfxVol}"
         oninput="S.sfxVol=parseFloat(this.value);updateAudioVolumes();saveState()">
     </div>
     <div class="settings-row">
-      <label>🎵 Muziek</label>
+      <label>${t('music')}</label>
       <input type="range" min="0" max="1" step="0.05" value="${S.musicVol}"
         oninput="S.musicVol=parseFloat(this.value);updateAudioVolumes();saveState()">
     </div>
     <div class="settings-row" style="justify-content:space-between">
-      <label>🔇 Alles gedempt</label>
+      <label>${t('mute_all')}</label>
       <button id="muteSettingsBtn" class="btn ${S.muted?'orange':'secondary'}" style="padding:6px 16px;font-size:.82rem"
-        onclick="toggleMute();document.getElementById('muteSettingsBtn').textContent=S.muted?'Aan':'Uit';document.getElementById('muteSettingsBtn').className='btn '+(S.muted?'orange':'secondary')">${S.muted?'Aan':'Uit'}</button>
+        onclick="toggleMute();document.getElementById('muteSettingsBtn').textContent=S.muted?t('on'):t('off');document.getElementById('muteSettingsBtn').className='btn '+(S.muted?'orange':'secondary')">${S.muted?t('on'):t('off')}</button>
     </div>
     <div class="settings-row" style="justify-content:space-between">
-      <label>🎵 Muziek track</label>
+      <label>${t('bgm_track')}</label>
       <select onchange="setBgmTrack(this.value)" style="background:#0d1f35;color:#c8ffe8;border:1px solid rgba(0,255,153,0.3);border-radius:8px;padding:4px 8px">
-        ${Object.entries(BGM_TRACKS).map(([k,t])=>`<option value="${k}" ${S.bgmTrack===k?'selected':''}>${t.name}</option>`).join('')}
+        ${Object.entries(BGM_TRACKS).map(([k,tr])=>`<option value="${k}" ${S.bgmTrack===k?'selected':''}>${tr.name}</option>`).join('')}
       </select>
     </div>
     <div class="settings-row" style="justify-content:space-between">
-      <label>💥 Treffereffect</label>
+      <label>${t('hit_effect')}</label>
       <select onchange="S.favoriteEffect=this.value;saveState()" style="background:#0d1f35;color:#c8ffe8;border:1px solid rgba(0,255,153,0.3);border-radius:8px;padding:4px 8px">
-        <option value="random" ${S.favoriteEffect==='random'?'selected':''}>Willekeurig</option>
+        <option value="random" ${S.favoriteEffect==='random'?'selected':''}>Random</option>
         ${HIT_EFFECTS.map(e=>`<option value="${e}" ${S.favoriteEffect===e?'selected':''}>${e}</option>`).join('')}
       </select>
     </div>
     <div class="settings-row" style="justify-content:space-between">
-      <label>🌟 Ballentrail</label>
+      <label>${t('ball_trail')}</label>
       <button id="ballTrailBtn" class="btn ${S.ballTrail!==false?'':'secondary'}" style="padding:6px 16px;font-size:.82rem"
-        onclick="S.ballTrail=!S.ballTrail;saveState();document.getElementById('ballTrailBtn').textContent=S.ballTrail?'Aan':'Uit';document.getElementById('ballTrailBtn').className='btn '+(S.ballTrail?'':'secondary')">${S.ballTrail!==false?'Aan':'Uit'}</button>
+        onclick="S.ballTrail=!S.ballTrail;saveState();document.getElementById('ballTrailBtn').textContent=S.ballTrail?t('on'):t('off');document.getElementById('ballTrailBtn').className='btn '+(S.ballTrail?'':'secondary')">${S.ballTrail!==false?t('on'):t('off')}</button>
     </div>
-    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">← Terug</button></div>
-    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v14.0</div>
+    <div class="settings-row" style="justify-content:space-between">
+      <label>${t('language')}</label>
+      <select onchange="S.language=this.value;saveState();switchPanel(showSettings)" style="background:#0d1f35;color:#c8ffe8;border:1px solid rgba(0,255,153,0.3);border-radius:8px;padding:4px 8px">
+        ${Object.entries(langNames).map(([code,name])=>`<option value="${code}" ${S.language===code?'selected':''}>${name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
+    <div style="margin-top:16px;color:#445;font-size:.72rem;text-align:center">PingPong Blaster v14.1</div>
   </div>`;
   overlay.style.display='flex';
 }
@@ -4327,6 +4332,34 @@ function setBgmTrack(track){
   if(bgmInterval){startBGM();} // restart with the new track if playing
 }
 
+
+// ── LOGIN CALENDAR ────────────────────────────────────────────────────────────
+function showLoginCalendar(){
+  gameState='calendar';startMenuLoop();
+  const streak=S.loginStreak||0;
+  const best=S.stats.bestLoginStreak||0;
+  const milestones=[{day:1,coins:5},{day:3,coins:10},{day:5,coins:15},{day:7,coins:25},{day:14,coins:50},{day:21,coins:75},{day:30,coins:150}];
+  const rows=milestones.map(m=>{
+    const reached=streak>=m.day;
+    const isNext=!reached&&(streak>=((milestones[milestones.indexOf(m)-1]||{day:0}).day));
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,${reached?'.1':'.04'});border-radius:8px;margin:4px 0;border:1px solid rgba(255,255,255,${reached?'.25':'.08'})">
+      <span style="font-size:1.3rem">${reached?'\u2705':(isNext?'\u2b50':'\ud83d\udd12')}</span>
+      <span style="flex:1;font-size:.85rem;color:${reached?'#c8ffe8':'#667'}">${t('day_lbl')} ${m.day}</span>
+      <span style="font-family:'Orbitron',monospace;font-size:.9rem;color:${reached?'var(--coin)':'#556'}">+${m.coins} \ud83e\ude99</span>
+    </div>`;
+  }).join('');
+  overlay.innerHTML=`<div class="panel" style="max-width:400px">
+    <h1 style="font-size:1.4rem">\ud83d\uddd3\ufe0f ${t('login_cal')}</h1>
+    <div style="display:flex;gap:20px;justify-content:center;margin:10px 0 16px">
+      <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:1.8rem;color:var(--accent)">${streak}</div><div style="font-size:.72rem;color:#556">${t('streak_lbl')}</div></div>
+      <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:1.8rem;color:#ffd700">${best}</div><div style="font-size:.72rem;color:#556">${t('best')}</div></div>
+    </div>
+    <div style="max-height:280px;overflow-y:auto;padding-right:4px">${rows}</div>
+    <p style="font-size:.75rem;color:#445;text-align:center;margin-top:10px">${t('bonus_lbl')}: ${Math.min(streak*5,50)} \ud83e\ude99 / ${t('day_lbl').toLowerCase()}</p>
+    <div class="btnrow" style="margin-top:14px"><button class="btn secondary" onclick="switchPanel(showMenu)">${t('back')}</button></div>
+  </div>`;
+  overlay.style.display='flex';
+}
 // ══════════════════════════════════════════════════════════════════════════════
 //  DAILY CHALLENGES
 // ══════════════════════════════════════════════════════════════════════════════
