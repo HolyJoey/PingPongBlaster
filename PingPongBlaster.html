@@ -54,6 +54,10 @@ canvas{border:2px solid rgba(0,255,153,0.35);border-radius:6px;cursor:none;displ
 @keyframes confFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(740deg);opacity:.65}}
 @keyframes newPulse{0%,100%{opacity:1}50%{opacity:.55}}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.diff-selector{display:flex;gap:3px;justify-content:center;margin:10px auto 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:22px;padding:4px;width:fit-content;}
+.diff-opt{background:transparent;border:none;color:#66708a;padding:6px 13px;border-radius:18px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.76rem;letter-spacing:.4px;cursor:pointer;transition:color .18s,background .18s,box-shadow .18s;white-space:nowrap;}
+.diff-opt:hover{color:#aab4cc;}
+.diff-opt.active{color:#fff;background:var(--diffc,rgba(0,255,153,0.18));box-shadow:0 0 10px var(--diffg,rgba(0,255,153,0.25));}
 .menu-grid .btn{padding:10px 8px;font-size:.78rem;border-radius:10px;letter-spacing:.3px;}
 
 /* ── TABS ── */
@@ -2059,15 +2063,16 @@ function shopMapsOwned(){return MAPS.filter(m=>m.source==='shop'&&S.ownedMaps.in
 
 // ── MOEILIJKHEIDSGRADEN ──
 const DIFFICULTIES={
-  makkelijk:{name:'Makkelijk',emoji:'🟢',speedMult:0.8,specialMult:0.7,coinMult:0.75,xpMult:0.75},
-  normaal:{name:'Normaal',emoji:'🟡',speedMult:1,specialMult:1,coinMult:1,xpMult:1},
-  moeilijk:{name:'Moeilijk',emoji:'🟠',speedMult:1.25,specialMult:1.3,coinMult:1.5,xpMult:1.5},
-  extreem:{name:'Extreem',emoji:'🔴',speedMult:1.5,specialMult:1.6,coinMult:2,xpMult:2},
+  makkelijk:{name:'Makkelijk',emoji:'🟢',speedMult:0.8,specialMult:0.7,coinMult:0.75,xpMult:0.75,color:'rgba(0,200,90,0.22)',glow:'rgba(0,200,90,0.3)'},
+  normaal:{name:'Normaal',emoji:'🟡',speedMult:1,specialMult:1,coinMult:1,xpMult:1,color:'rgba(220,180,0,0.22)',glow:'rgba(220,180,0,0.3)'},
+  moeilijk:{name:'Moeilijk',emoji:'🟠',speedMult:1.25,specialMult:1.3,coinMult:1.5,xpMult:1.5,color:'rgba(255,120,0,0.24)',glow:'rgba(255,120,0,0.32)'},
+  extreem:{name:'Extreem',emoji:'🔴',speedMult:1.5,specialMult:1.6,coinMult:2,xpMult:2,color:'rgba(255,40,60,0.26)',glow:'rgba(255,40,60,0.35)'},
 };
 function getDiff(){return DIFFICULTIES[S.difficulty]||DIFFICULTIES.normaal;}
-function cycleDifficulty(){
-  const keys=Object.keys(DIFFICULTIES);
-  S.difficulty=keys[(keys.indexOf(S.difficulty)+1)%keys.length];
+function diffName(key){return t('diff_'+(key||S.difficulty));}
+function setDifficulty(key){
+  if(!DIFFICULTIES[key])return;
+  S.difficulty=key;
   saveState();
   showMenu();
 }
@@ -2660,6 +2665,10 @@ const TRANSLATIONS={
   combo_lbl:    {en:'Combo',            nl:'Combo',           de:'Combo',         fr:'Combo',           es:'Combo',          zh:'\u8fde\u51fb',      ru:'\u041a\u043e\u043c\u0431\u043e'},
   streak_lbl:   {en:'Login Streak',     nl:'Login Streak',    de:'Einlogg-Streak',fr:'Connexion',       es:'Racha login',    zh:'\u767b\u5f55\u8fde\u51fb',  ru:'\u0421\u0435\u0440\u0438\u044f \u0432\u0445\u043e\u0434\u043e\u0432'},
   day_lbl:      {en:'Day',              nl:'Dag',             de:'Tag',           fr:'Jour',            es:'D\u00eda',            zh:'\u5929',        ru:'\u0414\u0435\u043d\u044c'},
+  diff_makkelijk:{en:'Easy',             nl:'Makkelijk',       de:'Leicht',        fr:'Facile',          es:'F\u00e1cil',          zh:'\u7b80\u5355',      ru:'\u041b\u0435\u0433\u043a\u043e'},
+  diff_normaal: {en:'Normal',           nl:'Normaal',         de:'Normal',        fr:'Normal',          es:'Normal',         zh:'\u666e\u901a',      ru:'\u041e\u0431\u044b\u0447\u043d\u043e'},
+  diff_moeilijk:{en:'Hard',             nl:'Moeilijk',        de:'Schwer',        fr:'Difficile',       es:'Dif\u00edcil',        zh:'\u56f0\u96be',      ru:'\u0421\u043b\u043e\u0436\u043d\u043e'},
+  diff_extreem: {en:'Extreme',          nl:'Extreem',         de:'Extrem',        fr:'Extr\u00eame',         es:'Extremo',        zh:'\u6781\u9650',      ru:'\u042d\u043a\u0441\u0442\u0440\u0438\u043c'},
   bonus_lbl:    {en:'Bonus',            nl:'Bonus',           de:'Bonus',         fr:'Bonus',           es:'Bonus',          zh:'\u5956\u52b1',      ru:'\u0411\u043e\u043d\u0443\u0441'},
 };
 function t(key){
@@ -2686,7 +2695,7 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>{keys[e.key]=false;});
 document.addEventListener('mouseover',e=>{
-  if(e.target.closest('.btn,.shop-item,.tab,.crate,.ach-card,.bp-node,.menu-grid .btn')){
+  if(e.target.closest('.btn,.shop-item,.tab,.crate,.ach-card,.bp-node,.menu-grid .btn,.diff-opt')){
     playHover();
   }
 });
@@ -2695,11 +2704,11 @@ function pauseGame(){
   gameState='paused';
   cancelAnimationFrame(raf);
   stopBGM();
-  const modeName='🏓 '+getDiff().name;
+
   overlay.innerHTML=`<div class="panel" style="max-width:360px">
     <div style="font-size:2rem">⏸️</div>
     <h1 style="font-size:1.5rem">${t('paused')}</h1>
-    <p class="subtitle" style="margin-bottom:8px">${getDiff().emoji} ${getDiff().name}</p>
+    <p class="subtitle" style="margin-bottom:8px">${getDiff().emoji} ${diffName()}</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 14px">
       <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--accent)">${score}</div><div style="font-size:.7rem;color:#556">${t('score_lbl')}</div></div>
       <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px"><div style="font-family:'Orbitron',monospace;font-size:1.1rem;color:#ff9500">${combo}</div><div style="font-size:.7rem;color:#556">${t('combo_lbl')}</div></div>
@@ -3678,7 +3687,7 @@ function triggerGameOver(reden){
       (S.best>0?`<div style="color:#889;font-size:.82rem;margin:4px 0">📊 \${Math.round(score/S.best*100)}% van je \${t('best').toLowerCase()} (\${S.best})</div>`:'')
     }
     <div style="font-size:.8rem;color:#556;margin:4px 0">${reden}</div>
-    <div style="font-size:.78rem;color:#667;margin:2px 0">${t('difficulty')}: ${getDiff().emoji} ${getDiff().name}</div>
+    <div style="font-size:.78rem;color:#667;margin:2px 0">${t('difficulty')}: ${getDiff().emoji} ${diffName()}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0">
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px">
         <div style="font-size:1.2rem">🏓</div>
@@ -3826,7 +3835,9 @@ function showMenu(){
       ${todayBestTxt?`<span style="color:#ffcc44;font-size:.75rem">${todayBestTxt}</span>`:''}
     </div>
     <button class="btn btn-play" onclick="startGame()">${t('play')}</button>
-    <button class="btn secondary" onclick="cycleDifficulty()" style="padding:5px 16px;font-size:.78rem;border-radius:20px;margin:6px auto 0;display:block" title="${t('difficulty')}">${getDiff().emoji} ${getDiff().name}</button>
+    <div class="diff-selector" title="${t('difficulty')}">
+      ${Object.entries(DIFFICULTIES).map(([k,d])=>`<button class="diff-opt${S.difficulty===k?' active':''}" style="--diffc:${d.color};--diffg:${d.glow}" onclick="setDifficulty('${k}')">${d.emoji} ${diffName(k)}</button>`).join('')}
+    </div>
     <div class="menu-grid">
       <button class="btn secondary" onclick="switchPanel(showInventory)">${t('inventory')}</button>
       <button class="btn secondary" onclick="switchPanel(showShop)">${t('shop')}</button>
