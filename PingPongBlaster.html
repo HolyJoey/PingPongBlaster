@@ -3567,7 +3567,7 @@ function draw(){
   }
   ctx.shadowBlur=0;
   ctx.restore();
-  getBat().draw(ctx,racket.x,racket.y,racketPulse,racketSpin);
+  {const bwm=(22+[0,2.2,4.4,6.6][S.batWidthTier||0])/22;ctx.save();ctx.translate(racket.x,racket.y);ctx.scale(bwm,bwm);ctx.translate(-racket.x,-racket.y);getBat().draw(ctx,racket.x,racket.y,racketPulse,racketSpin);ctx.restore();}
   if(combo>=3){
     const multColors={1:'#00ff99',2:'#4a9eff',3:'#b94fff',4:'#ff9500'};
     const col=multColors[comboMult]||'#00ff99';
