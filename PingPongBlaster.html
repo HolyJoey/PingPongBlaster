@@ -2433,6 +2433,7 @@ function openCrateNoCharge(rarityKey){
 }
 
 function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
+  initAudio();playCrateOpen();
   const rarityNames={common:t('rar_common'),rare:t('rar_rare'),epic:t('rar_epic'),legendary:t('rar_legendary')};
   const rarityColors={common:'#9aaab8',rare:'#4a9eff',epic:'#b94fff',legendary:'#ff9500'};
 
@@ -2494,12 +2495,14 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
     requestAnimationFrame(()=>{
       reel.style.transition=`transform 5.5s cubic-bezier(0.15,0.05,0.05,1)`;
       reel.style.transform=`translateX(-${targetOffset}px)`;
+      playCrateReel(5.5);
     });
   });
 
   setTimeout(()=>{
     document.getElementById('reelResult').style.opacity='1';
     document.getElementById('reelBtns').style.opacity='1';
+    playCrateReveal(itemRarity);
     if(itemRarity==='legendary') showToast(`${t('legendary_reveal')} ${icon} ${name}`,'legendary-toast',6000);
   },5700);
 }
@@ -2604,6 +2607,78 @@ function playWheelTick(speedFactor){
   const vol=0.04+(1-speedFactor)*0.08;
   const freq=400+speedFactor*200;
   playTone(freq,0.025,'square',vol);
+}
+function playCrateOpen(){
+  if(!audioCtx||S.muted)return;
+  try{
+    playTone(90,.35,'triangle',.22);
+    playTone(140,.5,'sawtooth',.06,.02);
+    setTimeout(()=>playTone(180,.2,'triangle',.1),160);
+  }catch(e){}
+}
+function playCrateReel(durSec){
+  if(!audioCtx||S.muted)return;
+  try{
+    const osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+    osc.connect(g);g.connect(sfxGain);osc.type='sawtooth';
+    const now=audioCtx.currentTime,N=80;
+    for(let i=0;i<=N;i++){
+      const p=i/N,vel=3*Math.pow(1-p,2);
+      osc.frequency.setValueAtTime(Math.max(20,45+vel*110),now+p*durSec);
+    }
+    g.gain.setValueAtTime(0,now);
+    g.gain.linearRampToValueAtTime(0.07,now+0.06);
+    g.gain.setValueAtTime(0.07,now+durSec-0.4);
+    g.gain.linearRampToValueAtTime(0,now+durSec);
+    osc.start(now);osc.stop(now+durSec+0.1);
+    const TICKS=22;
+    for(let i=0;i<TICKS;i++){
+      const ePos=i/TICKS;
+      const tickT=now+(1-Math.pow(1-ePos,1/3))*durSec;
+      const spd=1-ePos;
+      const vol=0.025+(1-spd)*0.07;
+      const freq=420+spd*260;
+      const to=audioCtx.createOscillator(),tg=audioCtx.createGain();
+      to.connect(tg);tg.connect(sfxGain);
+      to.type='square';to.frequency.value=freq;
+      tg.gain.setValueAtTime(0,tickT);
+      tg.gain.linearRampToValueAtTime(vol,tickT+0.005);
+      tg.gain.exponentialRampToValueAtTime(0.001,tickT+0.032);
+      to.start(tickT);to.stop(tickT+0.04);
+    }
+  }catch(e){}
+}
+function playCrateReveal(rarity){
+  if(!audioCtx||S.muted)return;
+  try{
+    const now=audioCtx.currentTime;
+    const notesets={
+      common:[[440,.14],[554,.14],[659,.28]],
+      rare:[[440,.12],[554,.12],[659,.12],[880,.3]],
+      epic:[[392,.12],[523,.12],[659,.12],[784,.12],[1047,.4]],
+      legendary:[[261,.14],[330,.14],[392,.14],[523,.14],[659,.14],[784,.14],[1047,.14],[1319,.5]]
+    };
+    const notes=notesets[rarity]||notesets.common;
+    const vol=rarity==='legendary'?0.2:rarity==='epic'?0.17:0.14;
+    notes.forEach(([f,d],i)=>{
+      const o=audioCtx.createOscillator(),og=audioCtx.createGain();
+      o.connect(og);og.connect(sfxGain);o.type='sine';o.frequency.value=f;
+      const st=now+i*0.09;
+      og.gain.setValueAtTime(0,st);
+      og.gain.linearRampToValueAtTime(vol,st+0.01);
+      og.gain.exponentialRampToValueAtTime(0.001,st+d);
+      o.start(st);o.stop(st+d+0.05);
+    });
+    if(rarity==='legendary'||rarity==='epic'){
+      const bo=audioCtx.createOscillator(),bg=audioCtx.createGain();
+      bo.connect(bg);bg.connect(sfxGain);bo.type='triangle';
+      bo.frequency.value=rarity==='legendary'?65:98;
+      bg.gain.setValueAtTime(0,now);
+      bg.gain.linearRampToValueAtTime(0.14,now+0.05);
+      bg.gain.exponentialRampToValueAtTime(0.001,now+1.1);
+      bo.start(now);bo.stop(now+1.2);
+    }
+  }catch(e){}
 }
 function playScoreMeterFanfare(){[523,659,784,1047,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.18),i*60));}
 function playHover(){
