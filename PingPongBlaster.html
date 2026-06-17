@@ -2365,22 +2365,22 @@ function openCrate(rarityKey){
   let lootName='',lootIcon='📦',lootItemType='coins';
   if(loot.type==='coins'){
     S.coins+=loot.amount;S.stats.totalCoins+=loot.amount;coinUiEl.textContent=S.coins;
-    lootName=loot.amount+' Muntjes';lootIcon='🪙';lootItemType='coins';
+    lootName=loot.amount+' '+t('coins_word');lootIcon='🪙';lootItemType='coins';
     S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='bat'){
     const bat=BATS.find(b=>b.id===loot.id);
     if(bat&&!S.ownedBats.includes(bat.id))S.ownedBats.push(bat.id);
-    lootName=bat?bat.name:'Onbekend Batje';lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
+    lootName=bat?itemName(bat,'bats'):t('unknown_item');lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
     if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='map'){
     const map=MAPS.find(m=>m.id===loot.id);
     if(map&&!S.ownedMaps.includes(map.id))S.ownedMaps.push(map.id);
-    lootName=map?map.name:'Onbekend Veld';lootIcon=map?map.emoji:'🗺️';lootItemType='map';
+    lootName=map?itemName(map,'maps'):t('unknown_item');lootIcon=map?map.emoji:'🗺️';lootItemType='map';
     if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='ball'){
     const ball=BALL_SKINS.find(b=>b.id===loot.id);
     if(ball&&!S.ownedBallSkins.includes(ball.id))S.ownedBallSkins.push(ball.id);
-    lootName=ball?ball.name:'Onbekende Bal';lootIcon=ball?ball.emoji:'⚽';lootItemType='ball';
+    lootName=ball?itemName(ball,'balls'):t('unknown_item');lootIcon=ball?ball.emoji:'⚽';lootItemType='ball';
     if(ball)S.lootHistory.push({id:ball.id,name:ball.name,emoji:ball.emoji,rarity:ball.rarity,itemType:'ball',date:new Date().toLocaleDateString('nl-NL')});
   }
   if(S.lootHistory.length>50)S.lootHistory.shift();
@@ -2407,22 +2407,22 @@ function openCrateNoCharge(rarityKey){
   let lootName='',lootIcon='📦',lootItemType='coins';
   if(loot.type==='coins'){
     S.coins+=loot.amount;S.stats.totalCoins+=loot.amount;coinUiEl.textContent=S.coins;
-    lootName=loot.amount+' Muntjes';lootIcon='🪙';lootItemType='coins';
+    lootName=loot.amount+' '+t('coins_word');lootIcon='🪙';lootItemType='coins';
     S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='bat'){
     const bat=BATS.find(b=>b.id===loot.id);
     if(bat&&!S.ownedBats.includes(bat.id))S.ownedBats.push(bat.id);
-    lootName=bat?bat.name:'Onbekend Batje';lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
+    lootName=bat?itemName(bat,'bats'):t('unknown_item');lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
     if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='map'){
     const map=MAPS.find(m=>m.id===loot.id);
     if(map&&!S.ownedMaps.includes(map.id))S.ownedMaps.push(map.id);
-    lootName=map?map.name:'Onbekend Veld';lootIcon=map?map.emoji:'🗺️';lootItemType='map';
+    lootName=map?itemName(map,'maps'):t('unknown_item');lootIcon=map?map.emoji:'🗺️';lootItemType='map';
     if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString('nl-NL')});
   } else if(loot.type==='ball'){
     const ball=BALL_SKINS.find(b=>b.id===loot.id);
     if(ball&&!S.ownedBallSkins.includes(ball.id))S.ownedBallSkins.push(ball.id);
-    lootName=ball?ball.name:'Onbekende Bal';lootIcon=ball?ball.emoji:'⚽';lootItemType='ball';
+    lootName=ball?itemName(ball,'balls'):t('unknown_item');lootIcon=ball?ball.emoji:'⚽';lootItemType='ball';
     if(ball)S.lootHistory.push({id:ball.id,name:ball.name,emoji:ball.emoji,rarity:ball.rarity,itemType:'ball',date:new Date().toLocaleDateString('nl-NL')});
   }
   if(S.lootHistory.length>50)S.lootHistory.shift();
@@ -2433,7 +2433,7 @@ function openCrateNoCharge(rarityKey){
 }
 
 function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
-  const rarityNames={common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'};
+  const rarityNames={common:t('rar_common'),rare:t('rar_rare'),epic:t('rar_epic'),legendary:t('rar_legendary')};
   const rarityColors={common:'#9aaab8',rare:'#4a9eff',epic:'#b94fff',legendary:'#ff9500'};
 
   // Build pool of all loot items for filler icons
@@ -2458,7 +2458,7 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
   }
 
   overlay.innerHTML=`<div class="panel" style="max-width:460px;text-align:center">
-    <h1 style="font-size:1.2rem;margin-bottom:4px">${def.icon} ${t('crate_'+rarityKey)} ${t('crate_opened')}</h1>
+    <h1 style="font-size:1.2rem;margin-bottom:4px">${def.icon} ${t('crate_'+crateRarity)} ${t('crate_opened')}</h1>
     <p style="color:#556;font-size:.8rem;margin-bottom:8px">${t('crate_peek')}</p>
     <div class="crate-reel-wrap" id="crateReelWrap">
       <div class="crate-reel" id="crateReel">
@@ -2500,7 +2500,7 @@ function showLootReveal(crateRarity,itemRarity,icon,name,def,loot,lootItemType){
   setTimeout(()=>{
     document.getElementById('reelResult').style.opacity='1';
     document.getElementById('reelBtns').style.opacity='1';
-    if(itemRarity==='legendary') showToast(`🌠 LEGENDARISCH! ${icon} ${name}`,'legendary-toast',6000);
+    if(itemRarity==='legendary') showToast(`${t('legendary_reveal')} ${icon} ${name}`,'legendary-toast',6000);
   },5700);
 }
 
@@ -2979,6 +2979,25 @@ const TRANSLATIONS={
   cbt_desc_2:{en:'20% more coins per point',nl:'20% meer munten per punt',de:'20% mehr Münzen pro Punkt',fr:'20% pièces en plus',es:'20% más monedas',zh:'每分多20%金币',ru:'На 20% монет больше',it:'20% monete in più per punto',pt:'20% mais moedas por ponto'},
   cbt_desc_3:{en:'30% more coins (max)',nl:'30% meer muntjes (max)',de:'30% mehr Münzen (max)',fr:'30% pièces en plus (max)',es:'30% más monedas (máx.)',zh:'金币+30%（最大）',ru:'На 30% монет (макс)',it:'30% monete in più (max)',pt:'30% mais moedas (máx)'},
   featured_item_bought:{en:'\U0001f31f <strong>Featured item purchased!</strong> -20% discount!',nl:'\U0001f31f <strong>Uitgelicht item gekocht!</strong> -20% korting!',de:'\U0001f31f <strong>Angebot gekauft!</strong> -20% Rabatt!',fr:'\U0001f31f <strong>Article vedette acheté !</strong> -20% !',es:'\U0001f31f <strong>¡Artículo destacado comprado!</strong> -20%!',zh:'\U0001f31f <strong>特色商品已购！</strong> 享8折！',ru:'\U0001f31f <strong>Товар куплен!</strong> -20%!',it:'🌟 <strong>Articolo in evidenza acquistato!</strong> -20%!',pt:'🌟 <strong>Item em destaque comprado!</strong> -20%!'},
+  smash_season:{en:'Smash Season',nl:'Smash Seizoen',de:'Smash Season',fr:'Saison Smash',es:'Temporada Smash',zh:'狂击赛季',ru:'Смэш-сезон',it:'Stagione Smash',pt:'Temporada Smash'},
+  dir_up:{en:'Up',nl:'Omhoog',de:'Hoch',fr:'Haut',es:'Arriba',zh:'上',ru:'Вверх',it:'Su',pt:'Cima'},
+  dir_down:{en:'Down',nl:'Omlaag',de:'Runter',fr:'Bas',es:'Abajo',zh:'下',ru:'Вниз',it:'Giù',pt:'Baixo'},
+  dir_left:{en:'Left',nl:'Links',de:'Links',fr:'Gauche',es:'Izquierda',zh:'左',ru:'Влево',it:'Sinistra',pt:'Esquerda'},
+  dir_right:{en:'Right',nl:'Rechts',de:'Rechts',fr:'Droite',es:'Derecha',zh:'右',ru:'Вправо',it:'Destra',pt:'Direita'},
+  legendary_reveal:{en:'🌠 LEGENDARY!',nl:'🌠 LEGENDARISCH!',de:'🌠 LEGENDÄR!',fr:'🌠 LÉGENDAIRE !',es:'🌠 ¡LEGENDARIO!',zh:'🌠 传说级！',ru:'🌠 ЛЕГЕНДАРНЫЙ!',it:'🌠 LEGGENDARIO!',pt:'🌠 LENDÁRIO!'},
+  wheel_lbl_crate:{en:'📦 Crate',nl:'📦 Kist',de:'📦 Kiste',fr:'📦 Caisse',es:'📦 Caja',zh:'📦 箱子',ru:'📦 Ящик',it:'📦 Cassa',pt:'📦 Caixa'},
+  wheel_lbl_giftcrate:{en:'🎁 Crate',nl:'🎁 Kist',de:'🎁 Kiste',fr:'🎁 Caisse',es:'🎁 Caja',zh:'🎁 箱子',ru:'🎁 Ящик',it:'🎁 Cassa',pt:'🎁 Caixa'},
+  wheel_lbl_nothing:{en:'Nothing 😢',nl:'Niets 😢',de:'Nichts 😢',fr:'Rien 😢',es:'Nada 😢',zh:'什么都没有 😢',ru:'Ничего 😢',it:'Niente 😢',pt:'Nada 😢'},
+  lvltitle_rookie:{en:'🥚 Rookie',nl:'🥚 Nieuweling',de:'🥚 Neuling',fr:'🥚 Débutant',es:'🥚 Novato',zh:'🥚 新手',ru:'🥚 Новичок',it:'🥚 Esordiente',pt:'🥚 Iniciante'},
+  lvltitle_lob:{en:'🌱 Lob Beginner',nl:'🌱 Lob Beginner',de:'🌱 Lob-Anfänger',fr:'🌱 Débutant Lob',es:'🌱 Principiante Lob',zh:'🌱 吊球初学者',ru:'🌱 Новичок лоба',it:'🌱 Principiante Lob',pt:'🌱 Iniciante Lob'},
+  lvltitle_serve:{en:'🏓 Serve Pro',nl:'🏓 Serveer Pro',de:'🏓 Aufschlag-Profi',fr:'🏓 Pro du Service',es:'🏓 Pro del Saque',zh:'🏓 发球高手',ru:'🏓 Мастер подачи',it:'🏓 Pro del Servizio',pt:'🏓 Pro do Saque'},
+  lvltitle_rally:{en:'⚡ Rally Expert',nl:'⚡ Rally Expert',de:'⚡ Rally-Experte',fr:'⚡ Expert Rallye',es:'⚡ Experto en Rally',zh:'⚡ 对拉专家',ru:'⚡ Эксперт ралли',it:'⚡ Esperto di Palleggio',pt:'⚡ Especialista em Rally'},
+  lvltitle_spin:{en:'🔥 Spin Specialist',nl:'🔥 Spin Specialist',de:'🔥 Spin-Spezialist',fr:'🔥 Spécialiste Effet',es:'🔥 Especialista en Efectos',zh:'🔥 旋球专家',ru:'🔥 Специалист по кручению',it:'🔥 Specialista dell’Effetto',pt:'🔥 Especialista em Efeito'},
+  lvltitle_tt_master:{en:'💎 Table Tennis Master',nl:'💎 Tafeltennis Master',de:'💎 Tischtennis-Meister',fr:'💎 Maître de Tennis de Table',es:'💎 Maestro de Ping Pong',zh:'💎 乒乓大师',ru:'💎 Мастер настольного тенниса',it:'💎 Maestro di Ping Pong',pt:'💎 Mestre do Tênis de Mesa'},
+  lvltitle_legend:{en:'🌟 Smash Legend',nl:'🌟 Smash Legende',de:'🌟 Smash-Legende',fr:'🌟 Légende du Smash',es:'🌟 Leyenda del Smash',zh:'🌟 狂击传奇',ru:'🌟 Легенда смэша',it:'🌟 Leggenda dello Smash',pt:'🌟 Lenda do Smash'},
+  lvltitle_master:{en:'👑 Absolute Master',nl:'👑 Absolute Meester',de:'👑 Absoluter Meister',fr:'👑 Maître Absolu',es:'👑 Maestro Absoluto',zh:'👑 绝对大师',ru:'👑 Абсолютный мастер',it:'👑 Maestro Assoluto',pt:'👑 Mestre Absoluto'},
+  lvltitle_god:{en:'🎆 Ping Pong God',nl:'🎆 Ping Pong God',de:'🎆 Ping-Pong-Gott',fr:'🎆 Dieu du Ping Pong',es:'🎆 Dios del Ping Pong',zh:'🎆 乒乓之神',ru:'🎆 Бог пинг-понга',it:'🎆 Dio del Ping Pong',pt:'🎆 Deus do Ping Pong'},
+  unknown_item:{en:'Unknown',nl:'Onbekend',de:'Unbekannt',fr:'Inconnu',es:'Desconocido',zh:'未知',ru:'Неизвестно',it:'Sconosciuto',pt:'Desconhecido'},
 };
 function t(key){
   const lang=typeof S!=='undefined'&&S&&S.language?S.language:'en';
@@ -2987,6 +3006,7 @@ function t(key){
 function achDescTxt(a){const k='ad_'+a.stat;const s=t(k);return s===k?a.desc:s.replace('{n}',a.target);}
 function chDescTxt(c){const k='cd_'+c.stat;const s=t(k);return s===k?c.desc:s.replace('{n}',c.target);}
 function achNameTxt(a){const k='an_'+a.id;const s=t(k);return s===k?a.name:s;}
+function dirName(d){return t(d.dy===-1?'dir_up':d.dy===1?'dir_down':d.dx===-1?'dir_left':'dir_right');}
 function itemName(item,tab){const pfx={bats:'bat_',maps:'map_',balls:'ball_'}[tab]||'';if(!pfx)return item.name;const k=pfx+item.id;const s=t(k);return s===k?item.name:s;}
 function bpRewardName(node){if(node.reward.type==='coins')return(node.reward.amount||node.reward.value)+' '+t('coins_word');if(node.reward.type==='crate')return t('crate_'+(node.reward.rarity||node.reward.value));if(node.reward.type==='bat')return itemName({id:node.reward.id,name:node.name},'bats');if(node.reward.type==='map')return itemName({id:node.reward.id,name:node.name},'maps');return node.name;}
 canvas.addEventListener('mousemove',e=>{
@@ -3875,7 +3895,7 @@ function drawDirectionIndicator(){
   ctx.moveTo(-L/2,-w/2);ctx.lineTo(L/2-hl,-w/2);ctx.lineTo(L/2-hl,-hw/2);ctx.lineTo(L/2,0);
   ctx.lineTo(L/2-hl,hw/2);ctx.lineTo(L/2-hl,w/2);ctx.lineTo(-L/2,w/2);ctx.closePath();ctx.fill();
   ctx.restore();
-  ctx.fillStyle=dirColor;ctx.font='bold 20px Rajdhani,Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(d.name,wx,wy);
+  ctx.fillStyle=dirColor;ctx.font='bold 20px Rajdhani,Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(dirName(d),wx,wy);
   ctx.restore();
 }
 
@@ -4179,7 +4199,7 @@ function showMenu(){
     <div class="menu-grid">
       <button class="btn secondary" onclick="switchPanel(showInventory)">${t('inventory')}</button>
       <button class="btn secondary" onclick="switchPanel(showShop)">${t('shop')}</button>
-      <button class="btn secondary" onclick="switchPanel(showBP)">⚡ Smash Seizoen</button>
+      <button class="btn secondary" onclick="switchPanel(showBP)">⚡ ${t('smash_season')}</button>
       <button class="btn secondary" onclick="switchPanel(showWheel)">${t('wheel')}</button>
       <button class="btn secondary" onclick="switchPanel(showChallenges)">${t('daily')}</button>
       <button class="btn secondary" onclick="switchPanel(showAchievements)">${t('achievements')}</button>
@@ -4189,7 +4209,7 @@ function showMenu(){
       <button class="btn secondary" onclick="switchPanel(showProfile)">${t('profile')}</button>
       <button class="btn secondary" onclick="switchPanel(showSettings)">${t('settings')}</button>
       <button class="btn secondary" onclick="switchPanel(showLoginCalendar)">${t('login_cal')}</button>
-      ${S.level>=20?`<button class="btn gold" onclick="switchPanel(showPrestige)" style="grid-column:span 2">⚡ Prestige (Lv.MAX)</button>`:''}
+      ${S.level>=20?`<button class="btn gold" onclick="switchPanel(showPrestige)" style="grid-column:span 2">⚡ ${t('prestige_lbl')} (Lv.MAX)</button>`:''}
     </div>
   </div>`;
   overlay.style.display='flex';
@@ -4197,10 +4217,10 @@ function showMenu(){
   initMenuBalls();startMenuLoop();
 }
 function getLevelTitle(lvl){
-  if(lvl>=30)return'🎆 Ping Pong God';if(lvl>=25)return'👑 Absolute Meester';
-  if(lvl>=20)return'🌟 Smash Legende';if(lvl>=15)return'💎 Tafeltennis Master';
-  if(lvl>=10)return'🔥 Spin Specialist';if(lvl>=7)return'⚡ Rally Expert';
-  if(lvl>=5)return'🏓 Serveer Pro';if(lvl>=3)return'🌱 Lob Beginner';return'🥚 Nieuweling';
+  if(lvl>=30)return t('lvltitle_god');if(lvl>=25)return t('lvltitle_master');
+  if(lvl>=20)return t('lvltitle_legend');if(lvl>=15)return t('lvltitle_tt_master');
+  if(lvl>=10)return t('lvltitle_spin');if(lvl>=7)return t('lvltitle_rally');
+  if(lvl>=5)return t('lvltitle_serve');if(lvl>=3)return t('lvltitle_lob');return t('lvltitle_rookie');
 }
 
 // ── FEATURED DAILY SHOP ITEM ─────────────────────────────────────────────────
@@ -4444,7 +4464,7 @@ function selectItem(tab,id){
 function showBP(){
   gameState='bp';startMenuLoop();
   overlay.innerHTML=`<div class="panel" style="max-width:600px">
-    <h1 style="font-size:1.4rem">⚡ Smash Seizoen</h1>
+    <h1 style="font-size:1.4rem">⚡ ${t('smash_season')}</h1>
     <p class="subtitle" style="margin-bottom:10px">${t('bp_sub')}</p>
     <div class="level-card" style="margin-bottom:10px">
       <div<div style="font-size:.65rem;color:#556">${t('bp_cur')}</div><div class="level-num">${S.level}</div></div>
@@ -4613,9 +4633,9 @@ function showProfile(){
     <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(0,255,153,0.15);border-radius:10px;padding:12px;margin-bottom:12px">
       <div style="font-size:.75rem;color:#556;margin-bottom:8px;font-weight:700">${t('active_cosmetics')}</div>
       <div style="display:flex;gap:16px;justify-content:center;font-size:.88rem">
-        <span>${bat.emoji} ${bat.name}</span>
-        <span>${map.emoji} ${map.name}</span>
-        <span>${ballSkin.emoji} ${ballSkin.name}</span>
+        <span>${bat.emoji} ${itemName(bat,'bats')}</span>
+        <span>${map.emoji} ${itemName(map,'maps')}</span>
+        <span>${ballSkin.emoji} ${itemName(ballSkin,'balls')}</span>
       </div>
     </div>
     <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px;padding:12px;margin-bottom:12px;max-height:220px;overflow-y:auto">
@@ -5028,9 +5048,9 @@ const WHEEL_PRIZES=[
   {label:'25 🪙',color:'#7c3aed',award:()=>{S.coins+=25;S.stats.totalCoins+=25;coinUiEl.textContent=S.coins;playCoin();return t('wheel_coins').replace('{n}',25);}},
   {label:'50 🪙',color:'#d97706',award:()=>{S.coins+=50;S.stats.totalCoins+=50;coinUiEl.textContent=S.coins;playCoin();return t('wheel_coins').replace('{n}',50);}},
   {label:'+50 XP',color:'#2563eb',award:()=>{addXP(50);return t('wheel_xp');}},
-  {label:'📦 Kist',color:'#dc2626',award:()=>{S.inventory.push({type:'crate',rarity:'common',id:'wheel_'+Date.now()});return t('wheel_crate_common');}},
-  {label:'🎁 Kist',color:'#db2777',award:()=>{S.inventory.push({type:'crate',rarity:'rare',id:'wheel_'+Date.now()});return t('wheel_crate_rare');}},
-  {label:'Niets 😢',color:'#475569',award:()=>t('wheel_nothing')},
+  {label:'📦 Kist',labelKey:'wheel_lbl_crate',color:'#dc2626',award:()=>{S.inventory.push({type:'crate',rarity:'common',id:'wheel_'+Date.now()});return t('wheel_crate_common');}},
+  {label:'🎁 Kist',labelKey:'wheel_lbl_giftcrate',color:'#db2777',award:()=>{S.inventory.push({type:'crate',rarity:'rare',id:'wheel_'+Date.now()});return t('wheel_crate_rare');}},
+  {label:'Niets 😢',labelKey:'wheel_lbl_nothing',color:'#475569',award:()=>t('wheel_nothing')},
 ];
 let wheelSpinning=false,wheelAngle=0;
 function timeUntilMidnight(){
@@ -5073,7 +5093,7 @@ function drawWheel(angle){
     c.save();c.translate(cx,cy);c.rotate(a0+seg/2);
     c.textAlign='right';c.fillStyle='#fff';c.font="bold 14px 'Rajdhani',sans-serif";
     c.shadowColor='rgba(0,0,0,0.6)';c.shadowBlur=3;
-    c.fillText(p.label,rr-12,5);
+    c.fillText(p.labelKey?t(p.labelKey):p.label,rr-12,5);
     c.restore();
   });
   // outer ring + hub
@@ -5114,9 +5134,9 @@ function awardWheelPrize(){
   playAchievement();
   showToast(`🎡 <strong>${prize.label}</strong><br><small>${msg}</small>`,'lvl-toast',4500);
   const msgEl=document.getElementById('wheelMsg');
-  if(msgEl){msgEl.textContent=msg+' — Kom morgen terug! ⏳ Nog '+timeUntilMidnight();msgEl.style.color='#ffd700';}
+  if(msgEl){msgEl.textContent=msg+' — '+t('wheel_back')+' ⏳ '+timeUntilMidnight();msgEl.style.color='#ffd700';}
   const btn=document.getElementById('wheelBtn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Morgen weer!';}
+  if(btn){btn.disabled=true;btn.textContent=t('wheel_tomorrow');}
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
