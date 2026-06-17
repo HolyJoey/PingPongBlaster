@@ -2208,7 +2208,7 @@ function showAchievementPopup(ach){
   const popup=document.createElement('div');
   popup.id='achPopup';
   popup.style.cssText='position:fixed;left:50%;top:-120px;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#1a2a1a,#0d1f0d);border:2px solid #ffd700;border-radius:16px;padding:18px 28px;text-align:center;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 24px rgba(255,215,0,.3);transition:top 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-  popup.innerHTML=`<div style="font-size:2rem;margin-bottom:6px">${ach.icon}</div><div style="font-size:.7rem;color:#ffd700;font-weight:700;letter-spacing:2px;margin-bottom:4px">PRESTATIE!</div><div style="font-size:1rem;font-weight:700;color:#fff;font-family:Orbitron,monospace">${ach.name}</div><div style="font-size:.75rem;color:#aaa;margin-top:4px">${ach.desc}</div><div style="font-size:.8rem;color:#ffd700;margin-top:8px">+${ach.reward} 🪙</div>`;
+  popup.innerHTML=`<div style="font-size:2rem;margin-bottom:6px">${ach.icon}</div><div style="font-size:.7rem;color:#ffd700;font-weight:700;letter-spacing:2px;margin-bottom:4px">${t('toast_ach')}</div><div style="font-size:1rem;font-weight:700;color:#fff;font-family:Orbitron,monospace">${achNameTxt(ach)}</div><div style="font-size:.75rem;color:#aaa;margin-top:4px">${achDescTxt(ach)}</div><div style="font-size:.8rem;color:#ffd700;margin-top:8px">+${ach.reward} 🪙</div>`;
   document.body.appendChild(popup);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{popup.style.top='24px';}));
   achievementPopupTimeout=setTimeout(()=>{
@@ -2366,22 +2366,22 @@ function openCrate(rarityKey){
   if(loot.type==='coins'){
     S.coins+=loot.amount;S.stats.totalCoins+=loot.amount;coinUiEl.textContent=S.coins;
     lootName=loot.amount+' '+t('coins_word');lootIcon='🪙';lootItemType='coins';
-    S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString('nl-NL')});
+    S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString(getLangLocale())});
   } else if(loot.type==='bat'){
     const bat=BATS.find(b=>b.id===loot.id);
     if(bat&&!S.ownedBats.includes(bat.id))S.ownedBats.push(bat.id);
     lootName=bat?itemName(bat,'bats'):t('unknown_item');lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
-    if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString('nl-NL')});
+    if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString(getLangLocale())});
   } else if(loot.type==='map'){
     const map=MAPS.find(m=>m.id===loot.id);
     if(map&&!S.ownedMaps.includes(map.id))S.ownedMaps.push(map.id);
     lootName=map?itemName(map,'maps'):t('unknown_item');lootIcon=map?map.emoji:'🗺️';lootItemType='map';
-    if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString('nl-NL')});
+    if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString(getLangLocale())});
   } else if(loot.type==='ball'){
     const ball=BALL_SKINS.find(b=>b.id===loot.id);
     if(ball&&!S.ownedBallSkins.includes(ball.id))S.ownedBallSkins.push(ball.id);
     lootName=ball?itemName(ball,'balls'):t('unknown_item');lootIcon=ball?ball.emoji:'⚽';lootItemType='ball';
-    if(ball)S.lootHistory.push({id:ball.id,name:ball.name,emoji:ball.emoji,rarity:ball.rarity,itemType:'ball',date:new Date().toLocaleDateString('nl-NL')});
+    if(ball)S.lootHistory.push({id:ball.id,name:ball.name,emoji:ball.emoji,rarity:ball.rarity,itemType:'ball',date:new Date().toLocaleDateString(getLangLocale())});
   }
   if(S.lootHistory.length>50)S.lootHistory.shift();
   if(rarity==='legendary'){S.stats.legendaryFound++;checkAchievement('legendaryFound',S.stats.legendaryFound);}
@@ -2408,22 +2408,22 @@ function openCrateNoCharge(rarityKey){
   if(loot.type==='coins'){
     S.coins+=loot.amount;S.stats.totalCoins+=loot.amount;coinUiEl.textContent=S.coins;
     lootName=loot.amount+' '+t('coins_word');lootIcon='🪙';lootItemType='coins';
-    S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString('nl-NL')});
+    S.lootHistory.push({id:'coins',name:lootName,emoji:'🪙',rarity:'common',itemType:'coins',date:new Date().toLocaleDateString(getLangLocale())});
   } else if(loot.type==='bat'){
     const bat=BATS.find(b=>b.id===loot.id);
     if(bat&&!S.ownedBats.includes(bat.id))S.ownedBats.push(bat.id);
     lootName=bat?itemName(bat,'bats'):t('unknown_item');lootIcon=bat?bat.emoji:'🏓';lootItemType='bat';
-    if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString('nl-NL')});
+    if(bat)S.lootHistory.push({id:bat.id,name:bat.name,emoji:bat.emoji,rarity:bat.rarity,itemType:'bat',date:new Date().toLocaleDateString(getLangLocale())});
   } else if(loot.type==='map'){
     const map=MAPS.find(m=>m.id===loot.id);
     if(map&&!S.ownedMaps.includes(map.id))S.ownedMaps.push(map.id);
     lootName=map?itemName(map,'maps'):t('unknown_item');lootIcon=map?map.emoji:'🗺️';lootItemType='map';
-    if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString('nl-NL')});
+    if(map)S.lootHistory.push({id:map.id,name:map.name,emoji:map.emoji,rarity:map.rarity,itemType:'map',date:new Date().toLocaleDateString(getLangLocale())});
   } else if(loot.type==='ball'){
     const ball=BALL_SKINS.find(b=>b.id===loot.id);
     if(ball&&!S.ownedBallSkins.includes(ball.id))S.ownedBallSkins.push(ball.id);
     lootName=ball?itemName(ball,'balls'):t('unknown_item');lootIcon=ball?ball.emoji:'⚽';lootItemType='ball';
-    if(ball)S.lootHistory.push({id:ball.id,name:ball.name,emoji:ball.emoji,rarity:ball.rarity,itemType:'ball',date:new Date().toLocaleDateString('nl-NL')});
+    if(ball)S.lootHistory.push({id:ball.id,name:ball.name,emoji:ball.emoji,rarity:ball.rarity,itemType:'ball',date:new Date().toLocaleDateString(getLangLocale())});
   }
   if(S.lootHistory.length>50)S.lootHistory.shift();
   if(rarity==='legendary'){S.stats.legendaryFound++;checkAchievement('legendaryFound',S.stats.legendaryFound);}
@@ -3061,12 +3061,32 @@ const TRANSLATIONS={
   ball_achtbal:{en:'8-Ball',nl:'8-Ball',de:'8-Ball',fr:'Boule 8',es:'Bola 8',zh:'8号球',ru:'Шар 8',it:'Palla 8',pt:'Bola 8'},
   ball_sterrenstof:{en:'Stardust',nl:'Sterrenstof',de:'Sternenstaub',fr:'Poussière d’étoiles',es:'Polvo de estrellas',zh:'星尘',ru:'Звёздная пыль',it:'Polvere di stelle',pt:'Poeira Estelar'},
   ball_oog:{en:'Eye',nl:'Oog',de:'Auge',fr:'Œil',es:'Ojo',zh:'眼睛',ru:'Глаз',it:'Occhio',pt:'Olho'},
+  golden_popup:{en:'+{n}⭐ GOLD!',nl:'+{n}⭐ GOUD!',de:'+{n}⭐ GOLD!',fr:'+{n}⭐ OR!',es:'+{n}⭐ ORO!',zh:'+{n}⭐ 黄金!',ru:'+{n}⭐ ЗОЛОТО!',it:'+{n}⭐ ORO!',pt:'+{n}⭐ OURO!'},
+  combo_toast:{en:'🔥 Combo x{n}!',nl:'🔥 Combo x{n}!',de:'🔥 Kombo x{n}!',fr:'🔥 Combo x{n}!',es:'🔥 Combo x{n}!',zh:'🔥 连击x{n}!',ru:'🔥 Комбо x{n}!',it:'🔥 Combo x{n}!',pt:'🔥 Combo x{n}!'},
+  combo_popup:{en:'+COMBO x{n}!',nl:'+COMBO x{n}!',de:'+KOMBO x{n}!',fr:'+COMBO x{n}!',es:'+COMBO x{n}!',zh:'+连击x{n}!',ru:'+КОМБО x{n}!',it:'+COMBO x{n}!',pt:'+COMBO x{n}!'},
+  combo_bonus_15:{en:'🔥 Combo x15! +3 🪙',nl:'🔥 Combo x15! +3 🪙',de:'🔥 Kombo x15! +3 🪙',fr:'🔥 Combo x15! +3 🪙',es:'🔥 Combo x15! +3 🪙',zh:'🔥 连击x15! +3 🪙',ru:'🔥 Комбо x15! +3 🪙',it:'🔥 Combo x15! +3 🪙',pt:'🔥 Combo x15! +3 🪙'},
+  combo_bonus_25:{en:'🔥 Combo x25! +5 🪙',nl:'🔥 Combo x25! +5 🪙',de:'🔥 Kombo x25! +5 🪙',fr:'🔥 Combo x25! +5 🪙',es:'🔥 Combo x25! +5 🪙',zh:'🔥 连击x25! +5 🪙',ru:'🔥 Комбо x25! +5 🪙',it:'🔥 Combo x25! +5 🪙',pt:'🔥 Combo x25! +5 🪙'},
+  combo_bonus_50:{en:'🔥 Combo x50! +10 🪙',nl:'🔥 Combo x50! +10 🪙',de:'🔥 Kombo x50! +10 🪙',fr:'🔥 Combo x50! +10 🪙',es:'🔥 Combo x50! +10 🪙',zh:'🔥 连击x50! +10 🪙',ru:'🔥 Комбо x50! +10 🪙',it:'🔥 Combo x50! +10 🪙',pt:'🔥 Combo x50! +10 🪙'},
+  mystery_extra_ball:{en:'❓ EXTRA BALL!',nl:'❓ EXTRA BAL!',de:'❓ EXTRA BALL!',fr:'❓ BALLE BONUS!',es:'❓ ¡BOLA EXTRA!',zh:'❓ 额外球!',ru:'❓ ДОП. МЯЧ!',it:'❓ PALLA EXTRA!',pt:'❓ BOLA EXTRA!'},
+  mystery_jackpot:{en:'❓ JACKPOT +10🪙!',nl:'❓ JACKPOT +10🪙!',de:'❓ JACKPOT +10🪙!',fr:'❓ JACKPOT +10🪙!',es:'❓ JACKPOT +10🪙!',zh:'❓ 大奖 +10🪙!',ru:'❓ ДЖЕКПОТ +10🪙!',it:'❓ JACKPOT +10🪙!',pt:'❓ JACKPOT +10🪙!'},
+  mystery_combo:{en:'❓ +5 COMBO!',nl:'❓ +5 COMBO!',de:'❓ +5 KOMBO!',fr:'❓ +5 COMBO!',es:'❓ +5 COMBO!',zh:'❓ +5 连击!',ru:'❓ +5 КОМБО!',it:'❓ +5 COMBO!',pt:'❓ +5 COMBO!'},
+  curve_popup:{en:'🌀 CURVE +2🪙',nl:'🌀 CURVE +2🪙',de:'🌀 KURVE +2🪙',fr:'🌀 COURBE +2🪙',es:'🌀 CURVA +2🪙',zh:'🌀 弧线 +2🪙',ru:'🌀 КРИВАЯ +2🪙',it:'🌀 CURVA +2🪙',pt:'🌀 CURVA +2🪙'},
+  ghost_popup:{en:'👻 GHOST +5🪙',nl:'👻 SPOOK +5🪙',de:'👻 GEIST +5🪙',fr:'👻 FANTÔME +5🪙',es:'👻 FANTASMA +5🪙',zh:'👻 幽灵 +5🪙',ru:'👻 ПРИЗРАК +5🪙',it:'👻 FANTASMA +5🪙',pt:'👻 FANTASMA +5🪙'},
+  perfect_popup:{en:'✨ PERFECT!',nl:'✨ PERFECT!',de:'✨ PERFEKT!',fr:'✨ PARFAIT!',es:'✨ ¡PERFECTO!',zh:'✨ 完美!',ru:'✨ ОТЛИЧНО!',it:'✨ PERFETTO!',pt:'✨ PERFEITO!'},
+  boss_hp:{en:'💥 {n} HP LEFT!',nl:'💥 {n} HP OVER!',de:'💥 {n} HP ÜBRIG!',fr:'💥 {n} PV!',es:'💥 {n} HP!',zh:'💥 {n} HP剩余!',ru:'💥 {n} HP ОСТАЛОСЬ!',it:'💥 {n} HP RIMASTI!',pt:'💥 {n} HP RESTANTE!'},
+  boss_kill_popup:{en:'+5🪙 BOSS!',nl:'+5🪙 BOSS!',de:'+5🪙 BOSS!',fr:'+5🪙 BOSS!',es:'+5🪙 ¡JEFE!',zh:'+5🪙 BOSS!',ru:'+5🪙 БОСС!',it:'+5🪙 BOSS!',pt:'+5🪙 CHEFE!'},
+  bp_max_level:{en:'MAX LEVEL',nl:'MAX LEVEL',de:'MAX LEVEL',fr:'NIVEAU MAX',es:'NIVEL MÁX.',zh:'最高等级',ru:'МАКС. УРОВЕНЬ',it:'LIVELLO MAX',pt:'NÍVEL MÁX.'},
+  bp_lv_prefix:{en:'Lv.',nl:'Lv.',de:'Lv.',fr:'Niv.',es:'Nv.',zh:'Lv.',ru:'Ур.',it:'Lv.',pt:'Nv.'},
+  combo_float:{en:'+{n} combo!',nl:'+{n} combo!',de:'+{n} Kombo!',fr:'+{n} combo!',es:'+{n} combo!',zh:'+{n} 连击!',ru:'+{n} комбо!',it:'+{n} combo!',pt:'+{n} combo!'},
+  already_owned:{en:'Already owned!',nl:'Al in bezit!',de:'Bereits vorhanden!',fr:'Déjà possédé !',es:'¡Ya lo tienes!',zh:'已拥有！',ru:'Уже есть!',it:'Già posseduto!',pt:'Já possui!'},
+  prestige_need_lvl:{en:'Reach level 20 first!',nl:'Bereik eerst level 20!',de:'Erst Level 20 erreichen!',fr:'Atteins d’abord le niveau 20!',es:'¡Alcanza el nivel 20 primero!',zh:'先达到20级！',ru:'Сначала достигни 20 уровня!',it:'Raggiungi prima il livello 20!',pt:'Alcance o nível 20 primeiro!'},
 
 };
 function t(key){
   const lang=typeof S!=='undefined'&&S&&S.language?S.language:'en';
   return(TRANSLATIONS[key]&&(TRANSLATIONS[key][lang]||TRANSLATIONS[key]['en']))||key;
 }
+function getLangLocale(){const m={nl:'nl-NL',de:'de-DE',fr:'fr-FR',es:'es-ES',zh:'zh-CN',ru:'ru-RU',it:'it-IT',pt:'pt-BR'};return m[S.language]||'en-US';}
 function achDescTxt(a){const k='ad_'+a.stat;const s=t(k);return s===k?a.desc:s.replace('{n}',a.target);}
 function chDescTxt(c){const k='cd_'+c.stat;const s=t(k);return s===k?c.desc:s.replace('{n}',c.target);}
 function achNameTxt(a){const k='an_'+a.id;const s=t(k);return s===k?a.name:s;}
@@ -3136,7 +3156,7 @@ function pickDir(){
   if(idx===lastDirIdx)dirStreak++;else{lastDirIdx=idx;dirStreak=1;}return DIRS[idx];
 }
 
-const POWERUP_TYPES=['slowmo','shield','magnet','doubler','rebound','slow_mo'];
+const POWERUP_TYPES=['slowmo','shield','magnet','doubler','rebound'];
 function spawnBall(){
   // Feature 2: Boss ball spawn at every 25 points
   if(score>0&&score%25===0&&!bossActive&&balls.filter(b=>b.boss).length===0){
@@ -3354,11 +3374,11 @@ function registerPoint(x,y,b){
   if(combo>gameCombo)gameCombo=combo;
   const prevMult=comboMult;
   if(combo>=20)comboMult=4;else if(combo>=10)comboMult=3;else if(combo>=5)comboMult=2;else comboMult=1;
-  if(comboMult>prevMult){playComboMilestone();addPopup(x,y-44,'+COMBO x'+comboMult+'!','#ff9500');showToast('🔥 Combo x'+comboMult+'!');}
+  if(comboMult>prevMult){playComboMilestone();addPopup(x,y-44,t('combo_popup').replace('{n}',comboMult),'#ff9500');showToast(t('combo_toast').replace('{n}',comboMult));}
   // Combo coin bonuses
-  if(combo===15){const bc=3;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x15! +3 🪙');}
-  else if(combo===25){const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x25! +5 🪙');}
-  else if(combo===50){const bc=10;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast('🔥 Combo x50! +10 🪙');}
+  if(combo===15){const bc=3;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast(t('combo_bonus_15'));}
+  else if(combo===25){const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast(t('combo_bonus_25'));}
+  else if(combo===50){const bc=10;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;showToast(t('combo_bonus_50'));}
 
   // V14: Frenzy event every 40 points
   if(score>0&&score%40===0&&!frenzyActive){
@@ -3372,19 +3392,19 @@ function registerPoint(x,y,b){
     const roll=Math.random();
     if(roll<0.3){const c=5;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;playCoin();addPopup(x,y-44,'❓ +5🪙!','#cc44ff');}
     else if(roll<0.55){addXP(10);addPopup(x,y-44,'❓ +10 XP!','#cc44ff');}
-    else if(roll<0.75){combo+=5;addPopup(x,y-44,'❓ +5 COMBO!','#cc44ff');}
-    else if(roll<0.9){spawnBall();addPopup(x,y-44,'❓ EXTRA BAL!','#cc44ff');}
-    else{const c=10;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;playCoin();addPopup(x,y-44,'❓ JACKPOT +10🪙!','#ffd700');}
+    else if(roll<0.75){combo+=5;if(combo>=20)comboMult=4;else if(combo>=10)comboMult=3;else if(combo>=5)comboMult=2;addPopup(x,y-44,t('mystery_combo'),'#cc44ff');}
+    else if(roll<0.9){spawnBall();addPopup(x,y-44,t('mystery_extra_ball'),'#cc44ff');}
+    else{const c=10;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;playCoin();addPopup(x,y-44,t('mystery_jackpot'),'#ffd700');}
   }
   // V14: Curveball bonus
   if(b&&b.curve){
     const c=2;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;
-    addPopup(x,y-44,'🌀 CURVE +2🪙','#00ddff');
+    addPopup(x,y-44,t('curve_popup'),'#00ddff');
   }
   // Ghost ball bonus
   if(b&&b.ghost){
     const c=5;S.coins+=c;S.stats.totalCoins+=c;gameCoins+=c;coinUiEl.textContent=S.coins;playCoin();
-    addPopup(x,y-44,'👻 GHOST +5🪙','#aaddff');
+    addPopup(x,y-44,t('ghost_popup'),'#aaddff');
   }
 
   // Multi-ball tracking
@@ -3398,7 +3418,7 @@ function registerPoint(x,y,b){
     const goldenCoins=Math.max(1,Math.round(5*comboMult*S.prestigeMultiplier*getDiff().coinMult*(1+(S.coinBoostTier||0)*0.1)*(frenzyActive?2:1)));
     S.coins+=goldenCoins;S.stats.totalCoins+=goldenCoins;gameCoins+=goldenCoins;coinUiEl.textContent=S.coins;playCoin();
     addToPiggyBank(goldenCoins);
-    addPopup(x,y-28,'+5⭐ GOUD!','#ffd700');
+    addPopup(x,y-28,t('golden_popup').replace('{n}',goldenCoins),'#ffd700');
     shake=8+Math.min(score*.35,12);goodFlash=Math.min(.04+score*.008,.28);
     triggerHitEffect(x,y);playHit(combo);
     updateScore();
@@ -3423,7 +3443,7 @@ function registerPoint(x,y,b){
   playHit(combo);
   triggerHitEffect(x,y);
   addPopup(x,y-28,ec?'+'+ec+' 🪙':'+1',ec?'#f1c40f':'#00ff99');
-  spawnFloatText(x,y-20,combo>1?`+${combo} combo!`:'+1',combo>=5?'#ff9500':'#00ff99');
+  spawnFloatText(x,y-20,combo>1?t('combo_float').replace('{n}',combo):'+1',combo>=5?'#ff9500':'#00ff99');
   if(combo===10||combo===20||combo===30)triggerShake(5,3);
   shake=6+Math.min(score*.35,12);
   goodFlash=Math.min(.04+score*.008,.28);
@@ -3484,7 +3504,7 @@ function loop(){
         b.x+=Math.cos(perp)*osc;b.y+=Math.sin(perp)*osc;
       }
       // Magnet: pull toward racket
-      if(magnetActive){b.vx+=0.04*(racket.x-b.x)/Math.max(1,Math.hypot(racket.x-b.x,racket.y-b.y))*Math.hypot(racket.x-b.x,racket.y-b.y)/100;}
+      if(magnetActive){const _md=Math.max(1,Math.hypot(racket.x-b.x,racket.y-b.y));b.vx+=0.04*(racket.x-b.x)/_md;b.vy+=0.04*(racket.y-b.y)/_md;}
       if(b.cooldown>0)b.cooldown--;
       // Rebound: bounce off top/bottom walls
       if(reboundActive){
@@ -3502,6 +3522,7 @@ function loop(){
           else if(side==='right'&&b.vx>0){b.x=W-b.r-2;b.vx=-Math.abs(b.vx);}
         } else if(b.bomb){
           // Bomb reaches any wall: disappear, give point, spawn new ball
+          S.stats.bombsAvoided=(S.stats.bombsAvoided||0)+1;
           b.remove=true;
           registerPoint(b.x,b.y,b);
           spawnBall();
@@ -3520,13 +3541,13 @@ function loop(){
           if(b.boss){
             b.bossHitsLeft--;b.flash=1;playBossHit();triggerShake(5,4);
             const hue=b.bossHitsLeft>1?0:30;
-            addPopup(b.x,b.y-28,`💥 ${b.bossHitsLeft} HP OVER!`,'#ff4400');
+            addPopup(b.x,b.y-28,t('boss_hp').replace('{n}',b.bossHitsLeft),'#ff4400');
             if(b.bossHitsLeft<=0){
               b.remove=true;bossActive=false;
               const bc=5;S.coins+=bc;S.stats.totalCoins+=bc;gameCoins+=bc;coinUiEl.textContent=S.coins;
               addXP(15);
               S.stats.bossDefeated=(S.stats.bossDefeated||0)+1;
-              addPopup(b.x,b.y-50,'+5🪙 BOSS!','#ffd700');
+              addPopup(b.x,b.y-50,t('boss_kill_popup'),'#ffd700');
               triggerHitEffect(b.x,b.y);
               showToast(t('boss_toast'),'lvl-toast',3000);
               spawnBall();
@@ -3545,7 +3566,7 @@ function loop(){
             S.stats.perfectHits++;
             addXP(2);
             goodFlash=Math.min(goodFlash+0.4,0.7);
-            spawnFloatText(racket.x,racket.y-40,'✨ PERFECT!','#ffd700');
+            spawnFloatText(racket.x,racket.y-40,t('perfect_popup'),'#ffd700');
             playPerfectHit();
           }
           const nx=dx/dist,ny=dy/dist,alignment=nx*b.dir.dx+ny*b.dir.dy;
@@ -4074,7 +4095,7 @@ function triggerGameOver(reden){
   if(S.todayDate!==todayStr){S.todayDate=todayStr;S.todayGames=0;S.todayBest=0;}
   S.todayGames++;
   if(score>S.todayBest)S.todayBest=score;
-  const ec=Math.floor(score/3);S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;S.stats.gamesPlayed++;
+  const ec=score>0?Math.max(1,Math.floor(score/3*(S.prestigeMultiplier||1)*getDiff().coinMult*(1+(S.coinBoostTier||0)*0.1))):0;S.coins+=ec;S.stats.totalCoins+=ec;gameCoins+=ec;S.stats.gamesPlayed++;
   S.stats.totalScore=(S.stats.totalScore||0)+score;
   if(score>=20)S.stats.wins=(S.stats.wins||0)+1;
   checkGamesMilestone();
@@ -4089,7 +4110,7 @@ function triggerGameOver(reden){
     showToast(t('first_win'),'lvl-toast',4000);
   }
   // Insert into top 5 scores
-  S.topScores.push({score,date:new Date().toLocaleDateString('nl-NL')});
+  S.topScores.push({score,date:new Date().toLocaleDateString(getLangLocale())});
   S.topScores.sort((a,b)=>b.score-a.score);
   S.topScores=S.topScores.slice(0,5);
   addXP(Math.floor(score*1.5));
@@ -4417,6 +4438,8 @@ function renderShop(){
 
 function buyItem(tab,id,price){
   if(S.coins<price){showToast(t('not_enough_coins'));return;}
+  const _owned=(tab==='bats'&&S.ownedBats.includes(id))||(tab==='maps'&&S.ownedMaps.includes(id))||(tab==='balls'&&S.ownedBallSkins.includes(id));
+  if(_owned){showToast(t('already_owned'));return;}
   S.coins-=price;
   if(tab==='bats')S.ownedBats.push(id);
   else if(tab==='maps')S.ownedMaps.push(id);
@@ -4502,6 +4525,8 @@ function buyFeaturedItem(){
   if(!S.featuredItem)return;
   const fi=S.featuredItem;
   if(S.coins<fi.discountedPrice){showToast(t('not_enough_coins'));return;}
+  const _fiOwned=(fi.type==='bat'&&S.ownedBats.includes(fi.id))||(fi.type==='map'&&S.ownedMaps.includes(fi.id))||(fi.type==='ball'&&S.ownedBallSkins.includes(fi.id));
+  if(_fiOwned){showToast(t('already_owned'));return;}
   S.coins-=fi.discountedPrice;
   const tab=fi.type==='bat'?'bats':fi.type==='map'?'maps':'balls';
   if(fi.type==='bat')S.ownedBats.push(fi.id);
@@ -4531,11 +4556,11 @@ function showBP(){
     <h1 style="font-size:1.4rem">⚡ ${t('smash_season')}</h1>
     <p class="subtitle" style="margin-bottom:10px">${t('bp_sub')}</p>
     <div class="level-card" style="margin-bottom:10px">
-      <div<div style="font-size:.65rem;color:#556">${t('bp_cur')}</div><div class="level-num">${S.level}</div></div>
+      <div><div style="font-size:.65rem;color:#556">${t('bp_cur')}</div><div class="level-num">${S.level}</div></div>
       <div class="level-info">
         <div style="font-size:.85rem;font-weight:700">${getLevelTitle(S.level)}</div>
-        <div style="font-size:.72rem;color:#556;margin-top:2px">${S.level<20?S.xp+' / '+xpForLevel(S.level)+' XP':'MAX LEVEL'}</div>
-        <div class="xp-bar-large"><div class="xp-fill-large" style="width:${S.level>=20?100:Math.min(100,S.xp/xpForLevel(S.level)*100)}%"></div></div>
+        <div style="font-size:.72rem;color:#556;margin-top:2px">${S.level>=30?t('bp_max_level'):S.xp+' / '+xpForLevel(S.level)+' XP'}</div>
+        <div class="xp-bar-large"><div class="xp-fill-large" style="width:${S.level>=30?100:Math.min(100,S.xp/xpForLevel(S.level)*100)}%"></div></div>
       </div>
     </div>
     <div class="bp-track" id="bptrack"></div>
@@ -4543,16 +4568,19 @@ function showBP(){
   </div>`;
   overlay.style.display='flex';
   const track=document.getElementById('bptrack');
+  let _curNode=null;
   SMASH_SEASON.forEach(node=>{
     const unlocked=S.level>node.lvl||(S.level===node.lvl&&S.bpClaimedLvls.includes(node.lvl));
     const isCurrent=S.level===node.lvl;
     const div=document.createElement('div');
     div.className='bp-node'+(unlocked?' unlocked':'')+(isCurrent?' current':'')+(node.isLegendary?' legendary-node':'');
-    div.innerHTML=`<div class="bp-circle">${unlocked?'✅':node.icon}</div>
-      <div class="bp-lvl">Lv.${node.lvl}</div>
+    div.innerHTML=`<div class="bp-circle">${unlocked?'✅':isCurrent?'▶':node.icon}</div>
+      <div class="bp-lvl">${t('bp_lv_prefix')}${node.lvl}</div>
       <div class="bp-name">${bpRewardName(node)}</div>`;
     track.appendChild(div);
+    if(isCurrent)_curNode=div;
   });
+  if(_curNode)requestAnimationFrame(()=>_curNode.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}));
 }
 
 // ── ACHIEVEMENTS ──────────────────────────────────────────────────────────────
@@ -5069,6 +5097,7 @@ function showPrestige(){
 }
 
 function doPrestige(){
+  if(S.level<20){showToast(t('prestige_need_lvl'));return;}
   S.prestige++;
   S.prestigeMultiplier=1+S.prestige*0.25;
   S.level=1;S.xp=0;
