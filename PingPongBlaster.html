@@ -2578,6 +2578,33 @@ function playPowerup(){[523,659,784].forEach((f,i)=>setTimeout(()=>{playTone(f,.
 function playSlowMoTone(){[440,392,349,294].forEach((f,i)=>setTimeout(()=>playTone(f,.25,'sine',.15),i*100));}
 function playBossHit(){playTone(150,.15,'sawtooth',.2);playTone(200,.12,'square',.15);}
 function playShieldBreak(){[440,330,220].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'triangle',.18),i*60));}
+let _wheelTickT=0;
+function playWheelSpinSound(totalRot,durSec){
+  if(!audioCtx||S.muted)return;
+  try{
+    const osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+    osc.connect(g);g.connect(sfxGain);osc.type='sawtooth';
+    const now=audioCtx.currentTime,N=120;
+    for(let i=0;i<=N;i++){
+      const p=i/N,vel=totalRot*3*Math.pow(1-p,2)/durSec;
+      osc.frequency.setValueAtTime(Math.max(25,80+vel*10),now+p*durSec);
+    }
+    g.gain.setValueAtTime(0,now);
+    g.gain.linearRampToValueAtTime(0.09,now+0.05);
+    g.gain.setValueAtTime(0.09,now+durSec-0.15);
+    g.gain.linearRampToValueAtTime(0,now+durSec);
+    osc.start(now);osc.stop(now+durSec+0.1);
+  }catch(e){}
+}
+function playWheelTick(speedFactor){
+  if(!audioCtx||S.muted)return;
+  const now=audioCtx.currentTime;
+  if(now-_wheelTickT<0.04)return;
+  _wheelTickT=now;
+  const vol=0.04+(1-speedFactor)*0.08;
+  const freq=400+speedFactor*200;
+  playTone(freq,0.025,'square',vol);
+}
 function playScoreMeterFanfare(){[523,659,784,1047,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.18),i*60));}
 function playHover(){
   if(!audioCtx||S.muted)return;
@@ -4339,7 +4366,7 @@ function renderShop(){
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:1.6rem">${fItemDef.emoji}</span>
           <div style="flex:1">
-            <div style="font-size:.9rem;font-weight:700">${fItemDef.name}</div>
+            <div style="font-size:.9rem;font-weight:700">${itemName(fItemDef,fTab)}</div>
             <div style="font-size:.8rem;color:#888;margin-top:2px"><span style="text-decoration:line-through;color:#556">🪙 ${fi.originalPrice}</span> <span style="color:#44ff88;font-weight:700">🪙 ${fi.discountedPrice}</span> <span style="color:#ffd700;font-size:.75rem">-20%</span></div>
           </div>
           <button class="btn gold" style="padding:6px 14px;font-size:.78rem" onclick="buyFeaturedItem()" ${S.coins<fi.discountedPrice?'disabled':''}>${t('buy')}</button>
@@ -5205,6 +5232,8 @@ function spinWheel(){
   const totalRot=(4+Math.random()*3)*Math.PI*2+Math.random()*Math.PI*2;
   const dur=4000,startAngle=wheelAngle;
   let startT=null;
+  playWheelSpinSound(totalRot,dur/1000);
+  let _wLastSeg=-1;
   function anim(t){
     if(gameState!=='wheel'){wheelSpinning=false;return;}
     if(startT==null)startT=t;
@@ -5212,6 +5241,11 @@ function spinWheel(){
     const ease=1-Math.pow(1-p,3); // ease-out cubic
     wheelAngle=startAngle+totalRot*ease;
     drawWheel(wheelAngle);
+    const _wSz=Math.PI*2/WHEEL_PRIZES.length;
+    const _wNorm=((wheelAngle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+    const _wSeg=Math.floor(_wNorm/_wSz)%WHEEL_PRIZES.length;
+    if(_wLastSeg>=0&&_wSeg!==_wLastSeg)playWheelTick(1-p);
+    _wLastSeg=_wSeg;
     if(p<1){requestAnimationFrame(anim);}
     else{wheelSpinning=false;awardWheelPrize();}
   }
@@ -5225,7 +5259,7 @@ function awardWheelPrize(){
   const msg=prize.award();
   saveState();
   playAchievement();
-  showToast(`🎡 <strong>${prize.label}</strong><br><small>${msg}</small>`,'lvl-toast',4500);
+  showToast(`🎡 <strong>${prize.labelKey?t(prize.labelKey):prize.label}</strong><br><small>${msg}</small>`,'lvl-toast',4500);
   const msgEl=document.getElementById('wheelMsg');
   if(msgEl){msgEl.textContent=msg+' — '+t('wheel_back')+' ⏳ '+timeUntilMidnight();msgEl.style.color='#ffd700';}
   const btn=document.getElementById('wheelBtn');
